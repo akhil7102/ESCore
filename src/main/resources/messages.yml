@@ -24,11 +24,25 @@ core:
   cmd-spawn: "&e/spawn &7- Teleport to server spawn"
   cmd-setspawn: "&e/setspawn &7- Set server spawn location"
   cmd-arena: "&e/arena regen &7- Arena regeneration system"
+  cmd-give: "&e/escore give <player> <tags|glow|chatcolor> <value> <perm|temp [duration]>"
+  cmd-remove: "&e/escore remove <player> <tags|glow|chatcolor> [tag]"
   cmd-tag: "&e/escore tag <give|remove|clear|list> &7- Manage player tags"
   cmd-tags: "&e/tags &7- Player chat tags"
   cmd-cc: "&e/cc &7- Chat color cosmetic shortcuts"
   cmd-update: "&e/escore update <check|status> &7- BuiltByBit update checker"
   footer: "&8----------------------------------------"
+
+# ESCore Unified Give Command Hints
+escore:
+  give:
+    usage: "{PREFIX}&cUsage: /escore give <player> <feature> <value> <duration>\n&7Next argument: &e<player> &7(Online or offline player name)"
+    hint-feature: "{PREFIX}&cUsage: /escore give {PLAYER} <feature> <value> <duration>\n&7Next argument: &e<feature> &7(Options: &atags&7, &aglow&7, &achatcolor&7)"
+    invalid-feature: "{PREFIX}&cInvalid feature '&e{FEATURE}&c'. Valid features: &atags&c, &aglow&c, &achatcolor&c."
+    hint-tag: "{PREFIX}&cUsage: /escore give {PLAYER} tags <tag> <duration>\n&7Next argument: &e<tag> &7(Available tags: &f{TAGS}&7)"
+    hint-glow: "{PREFIX}&cUsage: /escore give {PLAYER} glow <color> <duration>\n&7Next argument: &e<color> &7(Available glow colors: &f{COLORS}&7)"
+    hint-chatcolor: "{PREFIX}&cUsage: /escore give {PLAYER} chatcolor <color> <duration>\n&7Next argument: &e<color> &7(Available chat colors: &f{COLORS}&7)"
+    hint-duration-type: "{PREFIX}&cUsage: /escore give {PLAYER} {FEATURE} {VALUE} <duration>\n&7Next argument: &e<duration> &7(Options: &aperm &7or &atemp <duration>&7)"
+    hint-duration-value: "{PREFIX}&cUsage: /escore give {PLAYER} {FEATURE} {VALUE} temp <duration>\n&7Next argument: &e<duration> &7(Examples: &a1h&7, &a12h&7, &a1d&7, &a5d&7, &a7d&7, &a30d&7)"
 
 # First Join Welcome Announcement
 first-join: "&c❤ &fWelcome &c{PLAYER} &fto &#FF3366&lSERVER&f! &7[&#FF3366#{COUNT}&7]"
@@ -162,12 +176,12 @@ cosmetics:
   missing-duration: "{PREFIX}&cYou must specify a duration for temporary cosmetics. Examples: 30m, 12h, 5d, 2w"
   invalid-duration: "{PREFIX}&c{ERROR}"
   error: "{PREFIX}&cAn error occurred while updating cosmetics."
-  usage-give: "{PREFIX}&cUsage: /escore give <player> <chatcolor|playerglow> <color> <perm|temp [duration]>"
-  usage-remove: "{PREFIX}&cUsage: /escore remove <player> <chatcolor|playerglow>"
+  usage-give: "{PREFIX}&cUsage: /escore give <player> <tags|glow|chatcolor> <value> <perm|temp [duration]>"
+  usage-remove: "{PREFIX}&cUsage: /escore remove <player> <tags|glow|chatcolor> [tag]"
   usage-chatcolor: "{PREFIX}&cUsage: /escore give <player> chatcolor <color> <perm|temp [duration]>"
   usage-remove-chatcolor: "{PREFIX}&cUsage: /escore remove <player> chatcolor"
-  usage-playerglow: "{PREFIX}&cUsage: /escore give <player> playerglow <color> <perm|temp [duration]>"
-  usage-remove-playerglow: "{PREFIX}&cUsage: /escore remove <player> playerglow"
+  usage-playerglow: "{PREFIX}&cUsage: /escore give <player> glow <color> <perm|temp [duration]>"
+  usage-remove-playerglow: "{PREFIX}&cUsage: /escore remove <player> glow"
   cc-help:
     header: "&8&m----------------&r &b&lChat Color Management &8&m----------------"
     give-perm: "&e/cc give <player> chatcolor <color> perm &7- Grant permanent chat color"
@@ -177,6 +191,10 @@ cosmetics:
 
 # Player Tags Messages
 tags:
+  given-perm: "{PREFIX}&aGranted permanent tag &r{TAG_DISPLAY} &ato &e{PLAYER}&a."
+  given-temp: "{PREFIX}&aGranted temporary tag &r{TAG_DISPLAY} &ato &e{PLAYER} &afor &e{DURATION}&a."
+  received-perm: "{PREFIX}&aYou were granted permanent &r{TAG_DISPLAY} &atag! Use &e/tags select {TAG} &ato activate it."
+  received-temp: "{PREFIX}&aYou were granted temporary &r{TAG_DISPLAY} &atag for &e{DURATION}&a! Use &e/tags select {TAG} &ato activate it."
   header: "&8&m----------------&r &b&lPlayer Tags &8&m----------------"
   status: "&7Current Tag: &r{TAG_DISPLAY} &7({TAG_NAME})"
   owned-count: "&7Owned Tags: &e{COUNT}"

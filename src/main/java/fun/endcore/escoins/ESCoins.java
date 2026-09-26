@@ -378,4 +378,8 @@ public class ESCoins extends JavaPlugin {
     public fun.endcore.escoins.update.UpdateChecker getUpdateChecker() {
         return updateChecker;
     }
+
+    public boolean isDebugCosmeticsEnabled() {
+        return configManager != null && configManager.getConfig().getBoolean("debug.cosmetics", false);
+    }
 }

@@ -70,8 +70,8 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| &fClearLag &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags");
         if (sender.hasPermission("escoins.admin") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-reload", "&e/escore reload &7- Reload all configurations");
-            mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <chatcolor|playerglow> <color> <perm|temp [duration]>");
-            mm.sendMessage(sender, "core.cmd-remove", "&e/escore remove <player> <chatcolor|playerglow>");
+            mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <tags|glow|chatcolor> <value> <perm|temp [duration]>");
+            mm.sendMessage(sender, "core.cmd-remove", "&e/escore remove <player> <tags|glow|chatcolor> [tag]");
             mm.sendMessage(sender, "core.cmd-tag", "&e/escore tag <give|remove|clear|list> &7- Manage player tags");
             mm.sendMessage(sender, "core.cmd-update", "&e/escore update <check|status> &7- BuiltByBit update checker");
         }

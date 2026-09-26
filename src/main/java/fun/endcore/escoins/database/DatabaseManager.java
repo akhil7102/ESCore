@@ -7,12 +7,14 @@ import fun.endcore.escoins.cosmetics.CosmeticType;
 import fun.endcore.escoins.cosmetics.OwnershipType;
 import fun.endcore.escoins.economy.TransactionRecord;
 import fun.endcore.escoins.tags.PlayerTagData;
+import fun.endcore.escoins.tags.TagEntry;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 /**
@@ -70,6 +72,14 @@ public abstract class DatabaseManager {
 
             // Create tags table
             stmt.executeUpdate(getCreateTagsTableSql());
+
+            // Migration check: ensure ownership_type and expires_at exist in escore_player_tags
+            try {
+                stmt.executeUpdate("ALTER TABLE escore_player_tags ADD COLUMN ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT';");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE escore_player_tags ADD COLUMN expires_at BIGINT DEFAULT NULL;");
+            } catch (SQLException ignored) {}
 
             // Create indices
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escoins_players_balance ON escoins_players(balance DESC);");
@@ -592,7 +602,8 @@ public abstract class DatabaseManager {
      */
     public PlayerTagData loadPlayerTags(UUID uuid) {
         PlayerTagData data = new PlayerTagData(uuid);
-        String sql = "SELECT tag_id, is_active FROM escore_player_tags WHERE uuid = ?;";
+        String sql = "SELECT tag_id, is_active, ownership_type, expires_at FROM escore_player_tags WHERE uuid = ?;";
+        List<String> expiredTagIds = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
@@ -600,9 +611,18 @@ public abstract class DatabaseManager {
                 while (rs.next()) {
                     String tagId = rs.getString("tag_id");
                     boolean isActive = rs.getInt("is_active") == 1;
-                    data.addTag(tagId);
-                    if (isActive) {
-                        data.setActiveTag(tagId);
+                    String ownerTypeStr = rs.getString("ownership_type");
+                    OwnershipType ownershipType = OwnershipType.fromString(ownerTypeStr);
+                    Long expiresAt = rs.getObject("expires_at") != null ? rs.getLong("expires_at") : null;
+
+                    TagEntry entry = new TagEntry(tagId, ownershipType, expiresAt);
+                    if (entry.isExpired()) {
+                        expiredTagIds.add(tagId);
+                    } else {
+                        data.addTag(entry);
+                        if (isActive) {
+                            data.setActiveTag(tagId);
+                        }
                     }
                 }
             }
@@ -611,18 +631,32 @@ public abstract class DatabaseManager {
                 plugin.getLogger().log(Level.SEVERE, "Failed to load player tags for " + uuid, e);
             }
         }
+
+        if (!expiredTagIds.isEmpty()) {
+            CompletableFuture.runAsync(() -> {
+                for (String expiredTagId : expiredTagIds) {
+                    removePlayerTag(uuid, expiredTagId);
+                }
+            });
+        }
         return data;
     }
 
     /**
-     * Adds an owned tag to a player.
+     * Adds an owned tag to a player with specific ownership and optional expiration timestamp.
      */
-    public boolean addPlayerTag(UUID uuid, String tagId) {
+    public boolean addPlayerTag(UUID uuid, String tagId, OwnershipType ownershipType, Long expiresAt) {
         String sql = getInsertTagSql();
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
             ps.setString(2, tagId.toUpperCase());
+            ps.setString(3, ownershipType != null ? ownershipType.name() : OwnershipType.PERMANENT.name());
+            if (expiresAt != null) {
+                ps.setLong(4, expiresAt);
+            } else {
+                ps.setNull(4, java.sql.Types.BIGINT);
+            }
             ps.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -631,6 +665,13 @@ public abstract class DatabaseManager {
             }
             return false;
         }
+    }
+
+    /**
+     * Adds an owned tag to a player (permanent).
+     */
+    public boolean addPlayerTag(UUID uuid, String tagId) {
+        return addPlayerTag(uuid, tagId, OwnershipType.PERMANENT, null);
     }
 
     /**

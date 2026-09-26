@@ -48,4 +48,11 @@ public class PlayerConnectionListener implements Listener {
             plugin.getSpawnManager().onPlayerMove(event.getPlayer(), event.getFrom(), event.getTo());
         }
     }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerChangedWorld(org.bukkit.event.player.PlayerChangedWorldEvent event) {
+        if (plugin.getCosmeticManager() != null) {
+            plugin.getCosmeticManager().onPlayerWorldChange(event.getPlayer());
+        }
+    }
 }

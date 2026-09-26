@@ -171,6 +171,8 @@ public class MySQLDatabase extends DatabaseManager {
                "uuid VARCHAR(36) NOT NULL, " +
                "tag_id VARCHAR(64) NOT NULL, " +
                "is_active TINYINT(1) NOT NULL DEFAULT 0, " +
+               "ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT', " +
+               "expires_at BIGINT DEFAULT NULL, " +
                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                "PRIMARY KEY (uuid, tag_id)" +
                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
@@ -178,7 +180,9 @@ public class MySQLDatabase extends DatabaseManager {
 
     @Override
     protected String getInsertTagSql() {
-        return "INSERT INTO escore_player_tags (uuid, tag_id, is_active) VALUES (?, ?, 0) " +
-               "ON DUPLICATE KEY UPDATE tag_id = tag_id;";
+        return "INSERT INTO escore_player_tags (uuid, tag_id, is_active, ownership_type, expires_at) VALUES (?, ?, 0, ?, ?) " +
+               "ON DUPLICATE KEY UPDATE " +
+               "ownership_type = VALUES(ownership_type), " +
+               "expires_at = VALUES(expires_at);";
     }
 }

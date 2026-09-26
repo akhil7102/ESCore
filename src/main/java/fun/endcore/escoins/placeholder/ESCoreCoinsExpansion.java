@@ -162,11 +162,12 @@ public class ESCoreCoinsExpansion extends PlaceholderExpansion {
         // %escore_tag% or %escore_tag_display%
         if (lower.equals("tag") || lower.equals("tag_display") || lower.equals("active_tag") || lower.equals("tag_active")) {
             if (player == null || plugin.getTagManager() == null) return "";
-            return plugin.getTagManager().getActiveTagDisplay(player.getUniqueId());
+            String display = plugin.getTagManager().getActiveTagDisplay(player.getUniqueId());
+            return display != null ? display : "";
         }
 
-        // %escore_tag_name% or %escore_tag_id%
-        if (lower.equals("tag_name") || lower.equals("tag_id")) {
+        // %escore_tag_raw% or %escore_tag_name% or %escore_tag_id%
+        if (lower.equals("tag_raw") || lower.equals("tag_name") || lower.equals("tag_id")) {
             if (player == null || plugin.getTagManager() == null) return "";
             String active = plugin.getTagManager().getActiveTag(player.getUniqueId());
             return active != null ? active : "";

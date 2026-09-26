@@ -155,23 +155,31 @@ public class TagManager {
     // ========================================================
 
     /**
-     * Grants tag ownership to a player.
+     * Grants tag ownership to a player with specific ownership type and expiration.
      */
-    public CompletableFuture<Boolean> giveTag(UUID uuid, String tagId) {
+    public CompletableFuture<Boolean> giveTag(UUID uuid, String tagId, fun.endcore.escoins.cosmetics.OwnershipType ownershipType, Long expiresAt) {
         if (!isValidTag(tagId)) {
             return CompletableFuture.completedFuture(false);
         }
         String upper = tagId.trim().toUpperCase();
-        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().addPlayerTag(uuid, upper))
+        TagEntry entry = new TagEntry(upper, ownershipType, expiresAt);
+        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().addPlayerTag(uuid, upper, ownershipType, expiresAt))
                 .thenApply(success -> {
                     if (success) {
                         PlayerTagData cached = playerTagsCache.get(uuid);
                         if (cached != null) {
-                            cached.addTag(upper);
+                            cached.addTag(entry);
                         }
                     }
                     return success;
                 });
+    }
+
+    /**
+     * Grants permanent tag ownership to a player.
+     */
+    public CompletableFuture<Boolean> giveTag(UUID uuid, String tagId) {
+        return giveTag(uuid, tagId, fun.endcore.escoins.cosmetics.OwnershipType.PERMANENT, null);
     }
 
     /**

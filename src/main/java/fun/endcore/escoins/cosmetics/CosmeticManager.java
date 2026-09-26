@@ -21,7 +21,7 @@ import java.util.logging.Level;
  * Provides thread-safe caching, persistence, scoreboard glow teams, and expiration handling.
  */
 public class CosmeticManager {
-    public static final String GLOW_TEAM_PREFIX = "escore_glow_";
+    public static final String GLOW_TEAM_PREFIX = "es_glow_";
 
     private final ESCoins plugin;
 
@@ -131,13 +131,26 @@ public class CosmeticManager {
 
                 // Apply player glow if active
                 CosmeticEntry glow = map.get(CosmeticType.PLAYER_GLOW);
-                if (glow != null && !glow.isExpired() && playerGlowEnabled) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (player.isOnline()) {
-                            applyPlayerGlow(player, glow.color());
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!player.isOnline()) return;
+
+                    if (glow != null && !glow.isExpired() && playerGlowEnabled) {
+                        applyPlayerGlow(player, glow.color());
+                    }
+
+                    // Synchronize any other currently glowing online players into this player's scoreboard
+                    Scoreboard playerSb = player.getScoreboard();
+                    for (Player other : Bukkit.getOnlinePlayers()) {
+                        if (other.equals(player)) continue;
+                        Optional<CosmeticEntry> otherGlow = getActiveCosmetic(other.getUniqueId(), CosmeticType.PLAYER_GLOW);
+                        if (otherGlow.isPresent() && !otherGlow.get().isExpired()) {
+                            CosmeticColor cc = getGlowColor(otherGlow.get().color());
+                            if (cc != null) {
+                                syncPlayerGlowToScoreboard(other, cc, playerSb);
+                            }
                         }
-                    });
-                }
+                    }
+                });
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to load cosmetics for " + player.getName(), e);
             }
@@ -146,8 +159,29 @@ public class CosmeticManager {
 
     public void onPlayerQuit(Player player) {
         removePlayerGlow(player);
-        // We can keep the active cosmetics cached or remove them on quit
+        // Clean up in-memory cache on quit
         activeCosmetics.remove(player.getUniqueId());
+    }
+
+    public void onPlayerWorldChange(Player player) {
+        if (player == null || !player.isOnline()) return;
+        Optional<CosmeticEntry> glow = getActiveCosmetic(player.getUniqueId(), CosmeticType.PLAYER_GLOW);
+        if (glow.isPresent() && !glow.get().isExpired() && playerGlowEnabled) {
+            applyPlayerGlow(player, glow.get().color());
+        }
+
+        // Sync other glowing players into this player's scoreboard in the new world
+        Scoreboard playerSb = player.getScoreboard();
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (other.equals(player)) continue;
+            Optional<CosmeticEntry> otherGlow = getActiveCosmetic(other.getUniqueId(), CosmeticType.PLAYER_GLOW);
+            if (otherGlow.isPresent() && !otherGlow.get().isExpired()) {
+                CosmeticColor cc = getGlowColor(otherGlow.get().color());
+                if (cc != null) {
+                    syncPlayerGlowToScoreboard(other, cc, playerSb);
+                }
+            }
+        }
     }
 
     // ========================================================
@@ -157,7 +191,6 @@ public class CosmeticManager {
     private void startExpirationTask() {
         // Runs every 200 ticks (10 seconds) on main thread - only checks online players with temporary cosmetics
         this.expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            long now = System.currentTimeMillis();
             for (Player player : Bukkit.getOnlinePlayers()) {
                 Map<CosmeticType, CosmeticEntry> map = activeCosmetics.get(player.getUniqueId());
                 if (map == null || map.isEmpty()) continue;
@@ -176,6 +209,10 @@ public class CosmeticManager {
                                 plugin.getDatabaseManager().deleteCosmetic(player.getUniqueId(), type)
                         );
 
+                        if (plugin.isDebugCosmeticsEnabled()) {
+                            plugin.getLogger().info("[DEBUG Cosmetics] Expired " + type + " for player " + player.getName());
+                        }
+
                         // Notify player
                         plugin.getMessageManager().sendMessage(player, "cosmetics.expired",
                                 "{PREFIX}&cYour &e{TYPE} &ccosmetic has expired.",
@@ -192,7 +229,7 @@ public class CosmeticManager {
     // ========================================================
 
     /**
-     * Applies the glowing color to the player via scoreboard teams.
+     * Applies the glowing color to the player via scoreboard teams across all viewers.
      * Reuses existing teams and does not interfere with teams of other plugins.
      */
     public void applyPlayerGlow(Player player, String colorName) {
@@ -200,15 +237,45 @@ public class CosmeticManager {
             return;
         }
 
-        Scoreboard scoreboard = getTargetScoreboard(player);
-        if (scoreboard == null) return;
-
-        // 1. Remove player from any previous ESCore glow team
-        removePlayerFromGlowTeams(player, scoreboard);
-
-        // 2. Resolve team for this color
         CosmeticColor cosmeticColor = getGlowColor(colorName);
         if (cosmeticColor == null) return;
+
+        Set<Scoreboard> scoreboards = getAllActiveScoreboards();
+        for (Scoreboard sb : scoreboards) {
+            syncPlayerGlowToScoreboard(player, cosmeticColor, sb);
+        }
+
+        // Set glowing
+        player.setGlowing(true);
+
+        if (plugin.isDebugCosmeticsEnabled()) {
+            plugin.getLogger().info("[DEBUG Cosmetics] Applied glow color " + cosmeticColor.name() + " to " + player.getName() + " on " + scoreboards.size() + " scoreboards.");
+        }
+    }
+
+    /**
+     * Disables glow and removes player from ESCore glow teams across all scoreboards.
+     */
+    public void removePlayerGlow(Player player) {
+        if (player == null) return;
+
+        Set<Scoreboard> scoreboards = getAllActiveScoreboards();
+        for (Scoreboard sb : scoreboards) {
+            removePlayerFromGlowTeams(player, sb);
+        }
+
+        if (player.isOnline()) {
+            player.setGlowing(false);
+        }
+
+        if (plugin.isDebugCosmeticsEnabled()) {
+            plugin.getLogger().info("[DEBUG Cosmetics] Removed glow from " + player.getName() + " across " + scoreboards.size() + " scoreboards.");
+        }
+    }
+
+    public void syncPlayerGlowToScoreboard(Player target, CosmeticColor cosmeticColor, Scoreboard scoreboard) {
+        if (target == null || scoreboard == null || cosmeticColor == null) return;
+        removePlayerFromGlowTeams(target, scoreboard);
 
         String teamName = GLOW_TEAM_PREFIX + cosmeticColor.name();
         Team team = scoreboard.getTeam(teamName);
@@ -222,45 +289,41 @@ public class CosmeticManager {
 
         if (team != null) {
             team.color(cosmeticColor.namedTextColor());
-            if (!team.hasEntry(player.getName())) {
-                team.addEntry(player.getName());
+            try {
+                team.setColor(cosmeticColor.bukkitColor());
+            } catch (Throwable ignored) {}
+
+            String name = target.getName();
+            if (!team.hasEntry(name)) {
+                team.addEntry(name);
             }
-        }
-
-        // 3. Set glowing
-        player.setGlowing(true);
-    }
-
-    /**
-     * Disables glow and removes player from ESCore glow teams.
-     */
-    public void removePlayerGlow(Player player) {
-        if (player == null) return;
-
-        Scoreboard scoreboard = getTargetScoreboard(player);
-        if (scoreboard != null) {
-            removePlayerFromGlowTeams(player, scoreboard);
-        }
-
-        if (player.isOnline()) {
-            player.setGlowing(false);
         }
     }
 
     private void removePlayerFromGlowTeams(Player player, Scoreboard scoreboard) {
+        if (scoreboard == null || player == null) return;
         String name = player.getName();
         for (Team team : scoreboard.getTeams()) {
             // ONLY inspect and remove from teams belonging to ESCore glow system!
-            if (team.getName().startsWith(GLOW_TEAM_PREFIX) && team.hasEntry(name)) {
+            if ((team.getName().startsWith(GLOW_TEAM_PREFIX) || team.getName().startsWith("escore_glow_")) && team.hasEntry(name)) {
                 team.removeEntry(name);
             }
         }
     }
 
-    private Scoreboard getTargetScoreboard(Player player) {
-        Scoreboard sb = player.getScoreboard();
-        if (sb != null) return sb;
-        return Bukkit.getScoreboardManager() != null ? Bukkit.getScoreboardManager().getMainScoreboard() : null;
+    private Set<Scoreboard> getAllActiveScoreboards() {
+        Set<Scoreboard> set = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (Bukkit.getScoreboardManager() != null) {
+            Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
+            if (main != null) set.add(main);
+        }
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            try {
+                Scoreboard sb = p.getScoreboard();
+                if (sb != null) set.add(sb);
+            } catch (Exception ignored) {}
+        }
+        return set;
     }
 
     // ========================================================

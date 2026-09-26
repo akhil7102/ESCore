@@ -147,6 +147,8 @@ class DatabaseManagerTest {
                        "uuid VARCHAR(36) NOT NULL, " +
                        "tag_id VARCHAR(64) NOT NULL, " +
                        "is_active INTEGER NOT NULL DEFAULT 0, " +
+                       "ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT', " +
+                       "expires_at BIGINT DEFAULT NULL, " +
                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                        "PRIMARY KEY (uuid, tag_id)" +
                        ");";
@@ -154,9 +156,11 @@ class DatabaseManagerTest {
 
             @Override
             protected String getInsertTagSql() {
-                return "INSERT INTO escore_player_tags (uuid, tag_id, is_active, created_at) " +
-                       "VALUES (?, ?, 0, CURRENT_TIMESTAMP) " +
-                       "ON CONFLICT(uuid, tag_id) DO NOTHING;";
+                return "INSERT INTO escore_player_tags (uuid, tag_id, is_active, ownership_type, expires_at) " +
+                       "VALUES (?, ?, 0, ?, ?) " +
+                       "ON CONFLICT(uuid, tag_id) DO UPDATE SET " +
+                       "ownership_type = excluded.ownership_type, " +
+                       "expires_at = excluded.expires_at;";
             }
         };
 
@@ -448,5 +452,20 @@ class DatabaseManagerTest {
         fun.endcore.escoins.tags.PlayerTagData afterClear = dbManager.loadPlayerTags(uuid);
         assertTrue(afterClear.getOwnedTags().isEmpty());
         assertNull(afterClear.getActiveTag());
+
+        // 9. Temporary tag persistence and expiration
+        UUID tempUuid = UUID.randomUUID();
+        assertTrue(dbManager.addPlayerTag(tempUuid, "PHANTOM", fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, System.currentTimeMillis() + 3600000L));
+        fun.endcore.escoins.tags.PlayerTagData tempLoaded = dbManager.loadPlayerTags(tempUuid);
+        assertTrue(tempLoaded.hasTag("PHANTOM"));
+        assertEquals(fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, tempLoaded.getTagEntry("PHANTOM").ownershipType());
+        assertTrue(tempLoaded.getTagEntry("PHANTOM").getRemainingMillis() > 0);
+
+        // Expired temporary tag should be filtered out and purged
+        UUID expiredUuid = UUID.randomUUID();
+        assertTrue(dbManager.addPlayerTag(expiredUuid, "NEMESIS", fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, System.currentTimeMillis() - 1000L));
+        fun.endcore.escoins.tags.PlayerTagData expiredLoaded = dbManager.loadPlayerTags(expiredUuid);
+        assertFalse(expiredLoaded.hasTag("NEMESIS"));
+        assertTrue(expiredLoaded.getOwnedTags().isEmpty());
     }
 }
