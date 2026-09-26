@@ -70,7 +70,7 @@ public class CoinManager {
      * Called when a player disconnects from the server.
      */
     public void onPlayerQuit(UUID uuid) {
-        // Keep in cache briefly or allow it to remain for fast offline querying
+        rankCache.remove(uuid);
     }
 
     /**

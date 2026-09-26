@@ -13,10 +13,10 @@ class CosmeticCommandFlowTest {
 
     @Test
     void testFeatureNormalization() {
-        assertEquals("tags", normalize("tags"));
-        assertEquals("tags", normalize("TAGS"));
-        assertEquals("tags", normalize("tag"));
-        assertEquals("tags", normalize("TAG"));
+        assertNull(normalize("tags"));
+        assertNull(normalize("TAGS"));
+        assertNull(normalize("tag"));
+        assertNull(normalize("TAG"));
 
         assertEquals("glow", normalize("glow"));
         assertEquals("glow", normalize("GLOW"));
@@ -35,7 +35,6 @@ class CosmeticCommandFlowTest {
     private String normalize(String str) {
         if (str == null) return null;
         String lower = str.toLowerCase();
-        if (lower.equals("tags") || lower.equals("tag")) return "tags";
         if (lower.equals("glow") || lower.equals("playerglow")) return "glow";
         if (lower.equals("chatcolor") || lower.equals("color")) return "chatcolor";
         return null;

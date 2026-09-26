@@ -303,6 +303,17 @@ public class CosmeticManager {
     private void removePlayerFromGlowTeams(Player player, Scoreboard scoreboard) {
         if (scoreboard == null || player == null) return;
         String name = player.getName();
+        try {
+            Team currentTeam = scoreboard.getEntryTeam(name);
+            if (currentTeam != null) {
+                if (currentTeam.getName().startsWith(GLOW_TEAM_PREFIX) || currentTeam.getName().startsWith("escore_glow_")) {
+                    currentTeam.removeEntry(name);
+                }
+                return;
+            }
+        } catch (Throwable ignored) {
+            // Fallback to loop if getEntryTeam is unsupported or throws
+        }
         for (Team team : scoreboard.getTeams()) {
             // ONLY inspect and remove from teams belonging to ESCore glow system!
             if ((team.getName().startsWith(GLOW_TEAM_PREFIX) || team.getName().startsWith("escore_glow_")) && team.hasEntry(name)) {

@@ -140,28 +140,6 @@ class DatabaseManagerTest {
                        "expires_at = excluded.expires_at, " +
                        "updated_at = CURRENT_TIMESTAMP;";
             }
-
-            @Override
-            protected String getCreateTagsTableSql() {
-                return "CREATE TABLE IF NOT EXISTS escore_player_tags (" +
-                       "uuid VARCHAR(36) NOT NULL, " +
-                       "tag_id VARCHAR(64) NOT NULL, " +
-                       "is_active INTEGER NOT NULL DEFAULT 0, " +
-                       "ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT', " +
-                       "expires_at BIGINT DEFAULT NULL, " +
-                       "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                       "PRIMARY KEY (uuid, tag_id)" +
-                       ");";
-            }
-
-            @Override
-            protected String getInsertTagSql() {
-                return "INSERT INTO escore_player_tags (uuid, tag_id, is_active, ownership_type, expires_at) " +
-                       "VALUES (?, ?, 0, ?, ?) " +
-                       "ON CONFLICT(uuid, tag_id) DO UPDATE SET " +
-                       "ownership_type = excluded.ownership_type, " +
-                       "expires_at = excluded.expires_at;";
-            }
         };
 
         dbManager.initialize();
@@ -398,74 +376,5 @@ class DatabaseManagerTest {
         assertTrue(deleted >= 1);
         List<fun.endcore.escoins.cosmetics.CosmeticEntry> list4 = dbManager.loadCosmetics(uuid);
         assertTrue(list4.isEmpty());
-    }
-
-    @Test
-    void testPlayerTagsPersistence() {
-        UUID uuid = UUID.randomUUID();
-
-        // 1. Initial state - no tags
-        fun.endcore.escoins.tags.PlayerTagData initial = dbManager.loadPlayerTags(uuid);
-        assertNotNull(initial);
-        assertTrue(initial.getOwnedTags().isEmpty());
-        assertNull(initial.getActiveTag());
-
-        // 2. Add tags
-        assertTrue(dbManager.addPlayerTag(uuid, "WARLORD"));
-        assertTrue(dbManager.addPlayerTag(uuid, "SLAYER"));
-        // Duplicate tag insertion should not fail
-        assertTrue(dbManager.addPlayerTag(uuid, "WARLORD"));
-
-        // 3. Verify loaded tags
-        fun.endcore.escoins.tags.PlayerTagData loaded = dbManager.loadPlayerTags(uuid);
-        assertEquals(2, loaded.getOwnedTags().size());
-        assertTrue(loaded.hasTag("WARLORD"));
-        assertTrue(loaded.hasTag("SLAYER"));
-        assertFalse(loaded.hasTag("GLADIATOR"));
-        assertNull(loaded.getActiveTag());
-
-        // 4. Set active tag
-        assertTrue(dbManager.setPlayerActiveTag(uuid, "WARLORD"));
-        fun.endcore.escoins.tags.PlayerTagData activeLoaded = dbManager.loadPlayerTags(uuid);
-        assertEquals("WARLORD", activeLoaded.getActiveTag());
-
-        // 5. Change active tag
-        assertTrue(dbManager.setPlayerActiveTag(uuid, "SLAYER"));
-        fun.endcore.escoins.tags.PlayerTagData activeLoaded2 = dbManager.loadPlayerTags(uuid);
-        assertEquals("SLAYER", activeLoaded2.getActiveTag());
-
-        // 6. Clear active tag (unselect)
-        assertTrue(dbManager.setPlayerActiveTag(uuid, null));
-        fun.endcore.escoins.tags.PlayerTagData clearedActive = dbManager.loadPlayerTags(uuid);
-        assertNull(clearedActive.getActiveTag());
-        assertEquals(2, clearedActive.getOwnedTags().size());
-
-        // 7. Remove one tag
-        assertTrue(dbManager.removePlayerTag(uuid, "WARLORD"));
-        fun.endcore.escoins.tags.PlayerTagData afterRemove = dbManager.loadPlayerTags(uuid);
-        assertEquals(1, afterRemove.getOwnedTags().size());
-        assertTrue(afterRemove.hasTag("SLAYER"));
-        assertFalse(afterRemove.hasTag("WARLORD"));
-
-        // 8. Clear all tags
-        assertTrue(dbManager.clearPlayerTags(uuid));
-        fun.endcore.escoins.tags.PlayerTagData afterClear = dbManager.loadPlayerTags(uuid);
-        assertTrue(afterClear.getOwnedTags().isEmpty());
-        assertNull(afterClear.getActiveTag());
-
-        // 9. Temporary tag persistence and expiration
-        UUID tempUuid = UUID.randomUUID();
-        assertTrue(dbManager.addPlayerTag(tempUuid, "PHANTOM", fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, System.currentTimeMillis() + 3600000L));
-        fun.endcore.escoins.tags.PlayerTagData tempLoaded = dbManager.loadPlayerTags(tempUuid);
-        assertTrue(tempLoaded.hasTag("PHANTOM"));
-        assertEquals(fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, tempLoaded.getTagEntry("PHANTOM").ownershipType());
-        assertTrue(tempLoaded.getTagEntry("PHANTOM").getRemainingMillis() > 0);
-
-        // Expired temporary tag should be filtered out and purged
-        UUID expiredUuid = UUID.randomUUID();
-        assertTrue(dbManager.addPlayerTag(expiredUuid, "NEMESIS", fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, System.currentTimeMillis() - 1000L));
-        fun.endcore.escoins.tags.PlayerTagData expiredLoaded = dbManager.loadPlayerTags(expiredUuid);
-        assertFalse(expiredLoaded.hasTag("NEMESIS"));
-        assertTrue(expiredLoaded.getOwnedTags().isEmpty());
     }
 }

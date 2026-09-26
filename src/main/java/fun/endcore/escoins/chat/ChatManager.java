@@ -31,6 +31,9 @@ public class ChatManager {
     private boolean hoverEnabled = true;
     private List<String> hoverLines = new ArrayList<>();
 
+    private static volatile Method cachedVaultPrefixMethod;
+    private static volatile boolean vaultLookupAttempted = false;
+
     public ChatManager(ESCoins plugin) {
         this.plugin = plugin;
         loadConfig();
@@ -95,19 +98,10 @@ public class ChatManager {
             }
         }
 
-        // 4. Player Tag (appears after username in chat)
-        Component tagComp = Component.empty();
-        if (plugin.getTagManager() != null) {
-            String activeTagDisplay = plugin.getTagManager().getActiveTagDisplay(source.getUniqueId());
-            if (activeTagDisplay != null && !activeTagDisplay.isEmpty()) {
-                tagComp = Component.space().append(plugin.getMessageManager().parse(activeTagDisplay));
-            }
-        }
-
-        // 5. Separator
+        // 4. Separator
         Component separator = plugin.getMessageManager().parse(" &7▶ ");
 
-        // 6. Message text
+        // 5. Message text
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
         Component messageComp;
 
@@ -137,7 +131,6 @@ public class ChatManager {
 
         return Component.empty()
                 .append(nameTag)
-                .append(tagComp)
                 .append(separator)
                 .append(messageComp);
     }
@@ -221,13 +214,21 @@ public class ChatManager {
         // Try Vault Chat via reflection / ServicesManager
         try {
             if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
-                Class<?> chatClass = Class.forName("net.milkbowl.vault.chat.Chat");
-                RegisteredServiceProvider<?> rsp = Bukkit.getServicesManager().getRegistration(chatClass);
-                if (rsp != null && rsp.getProvider() != null) {
-                    Method getPrefix = rsp.getProvider().getClass().getMethod("getPlayerPrefix", Player.class);
-                    Object res = getPrefix.invoke(rsp.getProvider(), player);
-                    if (res instanceof String s && !s.isEmpty()) {
-                        return s.endsWith(" ") ? s : s + " ";
+                if (!vaultLookupAttempted) {
+                    try {
+                        Class<?> chatClass = Class.forName("net.milkbowl.vault.chat.Chat");
+                        cachedVaultPrefixMethod = chatClass.getMethod("getPlayerPrefix", Player.class);
+                    } catch (Throwable ignored) {}
+                    vaultLookupAttempted = true;
+                }
+                if (cachedVaultPrefixMethod != null) {
+                    Class<?> chatClass = cachedVaultPrefixMethod.getDeclaringClass();
+                    RegisteredServiceProvider<?> rsp = Bukkit.getServicesManager().getRegistration(chatClass);
+                    if (rsp != null && rsp.getProvider() != null) {
+                        Object res = cachedVaultPrefixMethod.invoke(rsp.getProvider(), player);
+                        if (res instanceof String s && !s.isEmpty()) {
+                            return s.endsWith(" ") ? s : s + " ";
+                        }
                     }
                 }
             }

@@ -177,6 +177,10 @@ public class SpawnManager {
         }
     }
 
+    public boolean hasPendingTeleports() {
+        return !pendingTeleports.isEmpty();
+    }
+
     /**
      * Checks if player moved significantly and cancels pending teleport if cancel-on-move is enabled.
      */

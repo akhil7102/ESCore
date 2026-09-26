@@ -39,11 +39,6 @@ commands:
     aliases: [chatcolor]
     permission: escore.cosmetics.admin
     usage: /cc [give|remove]
-  tags:
-    description: Select and manage player chat tags
-    aliases: [tag]
-    permission: escore.tags
-    usage: /tags [list|select|remove]
 
 permissions:
   escoins.spawn:
@@ -77,7 +72,6 @@ permissions:
       escoins.clearlag: true
       escoins.arena.admin: true
       escore.cosmetics.admin: true
-      escore.tags.admin: true
       escore.update.admin: true
   escore.cosmetics.admin:
     description: Allows administrative access to cosmetic entitlements (chat colors & player glow)
@@ -102,38 +96,6 @@ permissions:
     default: op
   escoins.chat.color:
     description: Allows using color codes in chat messages
-    default: op
-  escore.tags:
-    description: Allows using player tag commands
-    default: true
-    children:
-      escore.tags.list: true
-      escore.tags.select: true
-      escore.tags.remove: true
-  escore.tags.list:
-    description: Allows listing owned tags
-    default: true
-  escore.tags.select:
-    description: Allows selecting an active tag
-    default: true
-  escore.tags.remove:
-    description: Allows removing the active tag
-    default: true
-  escore.tags.admin:
-    description: Provides administrative access to manage player tags
-    default: op
-    children:
-      escore.tags.give: true
-      escore.tags.remove.others: true
-      escore.tags.clear: true
-  escore.tags.give:
-    description: Allows granting tags to players
-    default: op
-  escore.tags.remove.others:
-    description: Allows removing tags from players
-    default: op
-  escore.tags.clear:
-    description: Allows clearing all tags from players
     default: op
   escore.update.notify:
     description: Allows receiving BuiltByBit update notifications

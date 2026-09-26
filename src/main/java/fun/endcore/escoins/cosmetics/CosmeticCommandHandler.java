@@ -2,8 +2,6 @@ package fun.endcore.escoins.cosmetics;
 
 import fun.endcore.escoins.ESCoins;
 import fun.endcore.escoins.database.PlayerData;
-import fun.endcore.escoins.tags.TagDefinition;
-import fun.endcore.escoins.tags.TagManager;
 import fun.endcore.escoins.util.DurationParser;
 import fun.endcore.escoins.util.MessageManager;
 import org.bukkit.Bukkit;
@@ -16,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Handles administrative grant and remove command flows for:
- * - tags
  * - glow
  * - chatcolor
  *
@@ -32,7 +29,6 @@ public class CosmeticCommandHandler {
 
     public boolean hasPermission(CommandSender sender) {
         return sender.hasPermission("escore.cosmetics.admin") ||
-               sender.hasPermission("escore.tags.admin") ||
                sender.hasPermission("escoins.admin") ||
                sender.isOp();
     }
@@ -72,7 +68,7 @@ public class CosmeticCommandHandler {
         } else {
             if (args.length < 3) {
                 mm.sendMessage(sender, "escore.give.hint-feature",
-                        "{PREFIX}&cUsage: /escore give " + targetName + " <feature> <value> <duration>\n&7Next argument: &e<feature> &7(Options: &atags&7, &aglow&7, &achatcolor&7)");
+                        "{PREFIX}&cUsage: /escore give " + targetName + " <feature> <value> <duration>\n&7Next argument: &e<feature> &7(Options: &aglow&7, &achatcolor&7)");
                 return true;
             }
             feature = normalizeFeature(args[2]);
@@ -83,7 +79,7 @@ public class CosmeticCommandHandler {
 
         if (feature == null) {
             mm.sendMessage(sender, "escore.give.invalid-feature",
-                    "{PREFIX}&cInvalid feature '&e{FEATURE}&c'. Valid features: &atags&c, &aglow&c, &achatcolor&c.",
+                    "{PREFIX}&cInvalid feature '&e{FEATURE}&c'. Valid features: &aglow&c, &achatcolor&c.",
                     "{FEATURE}", args[2]);
             return true;
         }
@@ -97,17 +93,7 @@ public class CosmeticCommandHandler {
         String rawValue = args[valueIndex];
 
         // Validate value against feature options
-        if (feature.equals("tags")) {
-            TagManager tm = plugin.getTagManager();
-            if (tm == null || !tm.isValidTag(rawValue)) {
-                String available = tm != null ? String.join(", ", tm.getRegisteredTags().keySet()) : "None";
-                mm.sendMessage(sender, "tags.not-found",
-                        "{PREFIX}&cInvalid tag '&e{TAG}&c'. Available tags: &7{TAGS}",
-                        "{TAG}", rawValue.toUpperCase(),
-                        "{TAGS}", available);
-                return true;
-            }
-        } else if (feature.equals("glow")) {
+        if (feature.equals("glow")) {
             CosmeticManager cm = plugin.getCosmeticManager();
             if (cm == null || !cm.isValidColor(CosmeticType.PLAYER_GLOW, rawValue)) {
                 String available = cm != null ? String.join(", ", cm.getAvailableGlowColors()) : "None";
@@ -167,7 +153,7 @@ public class CosmeticCommandHandler {
         }
 
         final String finalFeature = feature;
-        final String finalValue = feature.equals("tags") ? rawValue.toUpperCase() : rawValue.toLowerCase();
+        final String finalValue = rawValue.toLowerCase();
         final OwnershipType finalOwnership = ownership;
         final long finalDuration = durationMillis;
         final Long finalExpiresAt = expiresAt;
@@ -189,96 +175,53 @@ public class CosmeticCommandHandler {
 
             TargetProfile target = optPlayer.get();
 
-            if (finalFeature.equals("tags")) {
-                TagManager tm = plugin.getTagManager();
-                TagDefinition def = tm.getTag(finalValue);
-                String display = def != null ? def.display() : "[" + finalValue + "]";
+            CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
+            CosmeticManager cm = plugin.getCosmeticManager();
+            CompletableFuture<Boolean> future;
 
-                tm.giveTag(target.uuid(), finalValue, finalOwnership, finalExpiresAt).thenAccept(success -> {
-                    if (success) {
-                        if (finalOwnership == OwnershipType.PERMANENT) {
-                            mm.sendMessage(sender, "tags.given-perm",
-                                    "{PREFIX}&aGranted permanent tag &r{TAG_DISPLAY} &ato &e{PLAYER}&a.",
-                                    "{TAG_DISPLAY}", display,
-                                    "{TAG}", finalValue,
-                                    "{PLAYER}", target.name());
-                        } else {
-                            mm.sendMessage(sender, "tags.given-temp",
-                                    "{PREFIX}&aGranted temporary tag &r{TAG_DISPLAY} &ato &e{PLAYER} &afor &e{DURATION}&a.",
-                                    "{TAG_DISPLAY}", display,
-                                    "{TAG}", finalValue,
-                                    "{PLAYER}", target.name(),
-                                    "{DURATION}", finalDurationFormatted);
-                        }
-
-                        Player online = Bukkit.getPlayer(target.uuid());
-                        if (online != null && online.isOnline()) {
-                            if (finalOwnership == OwnershipType.PERMANENT) {
-                                mm.sendMessage(online, "tags.received-perm",
-                                        "{PREFIX}&aYou were granted permanent &r{TAG_DISPLAY} &atag! Use &e/tags select {TAG} &ato activate it.",
-                                        "{TAG_DISPLAY}", display,
-                                        "{TAG}", finalValue);
-                            } else {
-                                mm.sendMessage(online, "tags.received-temp",
-                                        "{PREFIX}&aYou were granted temporary &r{TAG_DISPLAY} &atag for &e{DURATION}&a! Use &e/tags select {TAG} &ato activate it.",
-                                        "{TAG_DISPLAY}", display,
-                                        "{TAG}", finalValue,
-                                        "{DURATION}", finalDurationFormatted);
-                            }
-                        }
-                    } else {
-                        mm.sendMessage(sender, "tags.error", "{PREFIX}&cFailed to grant tag.");
-                    }
-                });
+            if (finalOwnership == OwnershipType.PERMANENT) {
+                future = cm.givePermanentCosmetic(target.uuid(), cosmeticType, finalValue);
             } else {
-                CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
-                CosmeticManager cm = plugin.getCosmeticManager();
-                CompletableFuture<Boolean> future;
+                future = cm.giveTemporaryCosmetic(target.uuid(), cosmeticType, finalValue, finalDuration);
+            }
 
-                if (finalOwnership == OwnershipType.PERMANENT) {
-                    future = cm.givePermanentCosmetic(target.uuid(), cosmeticType, finalValue);
-                } else {
-                    future = cm.giveTemporaryCosmetic(target.uuid(), cosmeticType, finalValue, finalDuration);
-                }
+            future.thenAccept(success -> {
+                if (success) {
+                    String featureLabel = cosmeticType.getDisplayName();
+                    if (finalOwnership == OwnershipType.PERMANENT) {
+                        mm.sendMessage(sender, "cosmetics.given-perm",
+                                "{PREFIX}&aGranted permanent &e{COLOR} {TYPE} &ato &e{PLAYER}&a.",
+                                "{COLOR}", finalValue,
+                                "{TYPE}", featureLabel,
+                                "{PLAYER}", target.name());
+                    } else {
+                        mm.sendMessage(sender, "cosmetics.given-temp",
+                                "{PREFIX}&aGranted temporary &e{COLOR} {TYPE} &ato &e{PLAYER} &afor &e{DURATION}&a.",
+                                "{COLOR}", finalValue,
+                                "{TYPE}", featureLabel,
+                                "{PLAYER}", target.name(),
+                                "{DURATION}", finalDurationFormatted);
+                    }
 
-                future.thenAccept(success -> {
-                    if (success) {
-                        String featureLabel = cosmeticType.getDisplayName();
+                    Player online = Bukkit.getPlayer(target.uuid());
+                    if (online != null && online.isOnline()) {
                         if (finalOwnership == OwnershipType.PERMANENT) {
-                            mm.sendMessage(sender, "cosmetics.given-perm",
-                                    "{PREFIX}&aGranted permanent &e{COLOR} {TYPE} &ato &e{PLAYER}&a.",
+                            mm.sendMessage(online, "cosmetics.received-perm",
+                                    "{PREFIX}&aYou received permanent &e{COLOR} {TYPE}&a!",
                                     "{COLOR}", finalValue,
-                                    "{TYPE}", featureLabel,
-                                    "{PLAYER}", target.name());
+                                    "{TYPE}", featureLabel);
                         } else {
-                            mm.sendMessage(sender, "cosmetics.given-temp",
-                                    "{PREFIX}&aGranted temporary &e{COLOR} {TYPE} &ato &e{PLAYER} &afor &e{DURATION}&a.",
+                            mm.sendMessage(online, "cosmetics.received-temp",
+                                    "{PREFIX}&aYou received temporary &e{COLOR} {TYPE} &afor &e{DURATION}&a!",
                                     "{COLOR}", finalValue,
                                     "{TYPE}", featureLabel,
-                                    "{PLAYER}", target.name(),
                                     "{DURATION}", finalDurationFormatted);
                         }
-
-                        Player online = Bukkit.getPlayer(target.uuid());
-                        if (online != null && online.isOnline()) {
-                            if (finalOwnership == OwnershipType.PERMANENT) {
-                                mm.sendMessage(online, "cosmetics.received-perm",
-                                        "{PREFIX}&aYou received permanent &e{COLOR} {TYPE}&a!",
-                                        "{COLOR}", finalValue,
-                                        "{TYPE}", featureLabel);
-                            } else {
-                                mm.sendMessage(online, "cosmetics.received-temp",
-                                        "{PREFIX}&aYou received temporary &e{COLOR} {TYPE} &afor &e{DURATION}&a!",
-                                        "{COLOR}", finalValue,
-                                        "{TYPE}", featureLabel,
-                                        "{DURATION}", finalDurationFormatted);
-                            }
-                        }
-                    } else {
-                        mm.sendMessage(sender, "cosmetics.error", "{PREFIX}&cFailed to save cosmetic entitlement.");
                     }
-                });
-            }
+                } else {
+                    mm.sendMessage(sender, "cosmetics.error", "{PREFIX}&cFailed to save cosmetic entitlement.");
+                }
+            });
         });
 
         return true;
@@ -286,11 +229,7 @@ public class CosmeticCommandHandler {
 
     private void sendValueHint(CommandSender sender, String player, String feature) {
         MessageManager mm = plugin.getMessageManager();
-        if (feature.equals("tags")) {
-            String available = plugin.getTagManager() != null ? String.join(", ", plugin.getTagManager().getRegisteredTags().keySet()) : "None";
-            mm.sendMessage(sender, "escore.give.hint-tag",
-                    "{PREFIX}&cUsage: /escore give " + player + " tags <tag> <duration>\n&7Next argument: &e<tag> &7(Available tags: &f" + available + "&7)");
-        } else if (feature.equals("glow")) {
+        if (feature.equals("glow")) {
             String available = plugin.getCosmeticManager() != null ? String.join(", ", plugin.getCosmeticManager().getAvailableGlowColors()) : "None";
             mm.sendMessage(sender, "escore.give.hint-glow",
                     "{PREFIX}&cUsage: /escore give " + player + " glow <color> <duration>\n&7Next argument: &e<color> &7(Available glow colors: &f" + available + "&7)");
@@ -314,7 +253,7 @@ public class CosmeticCommandHandler {
 
         if (args.length < 2) {
             mm.sendMessage(sender, "cosmetics.usage-remove",
-                    "{PREFIX}&cUsage: /escore remove <player> <tags|glow|chatcolor> [tag]");
+                    "{PREFIX}&cUsage: /escore remove <player> <glow|chatcolor>");
             return true;
         }
 
@@ -330,7 +269,7 @@ public class CosmeticCommandHandler {
         } else {
             if (args.length < 3) {
                 mm.sendMessage(sender, "cosmetics.usage-remove",
-                        "{PREFIX}&cUsage: /escore remove " + targetName + " <tags|glow|chatcolor> [tag]");
+                        "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor>");
                 return true;
             }
             feature = normalizeFeature(args[2]);
@@ -341,7 +280,7 @@ public class CosmeticCommandHandler {
 
         if (feature == null) {
             mm.sendMessage(sender, "cosmetics.usage-remove",
-                    "{PREFIX}&cUsage: /escore remove " + targetName + " <tags|glow|chatcolor> [tag]");
+                    "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor>");
             return true;
         }
 
@@ -357,52 +296,21 @@ public class CosmeticCommandHandler {
 
             TargetProfile target = optPlayer.get();
 
-            if (finalFeature.equals("tags")) {
-                TagManager tm = plugin.getTagManager();
-                if (finalValue != null && !finalValue.trim().isEmpty()) {
-                    String tagId = finalValue.toUpperCase();
-                    tm.removeTag(target.uuid(), tagId).thenAccept(success -> {
-                        mm.sendMessage(sender, "tags.admin.removed",
-                                "{PREFIX}&aSuccessfully removed tag &e{TAG} &afrom &e{PLAYER}&a.",
-                                "{TAG_DISPLAY}", tagId,
-                                "{TAG}", tagId,
-                                "{PLAYER}", target.name());
-                        Player online = Bukkit.getPlayer(target.uuid());
-                        if (online != null && online.isOnline()) {
-                            mm.sendMessage(online, "tags.revoked",
-                                    "{PREFIX}&cThe tag &e{TAG} &cwas removed from your account.",
-                                    "{TAG_DISPLAY}", tagId,
-                                    "{TAG}", tagId);
-                        }
-                    });
-                } else {
-                    tm.clearTags(target.uuid()).thenAccept(success -> {
-                        mm.sendMessage(sender, "tags.admin.cleared",
-                                "{PREFIX}&aSuccessfully cleared all tags from &e{PLAYER}&a.",
-                                "{PLAYER}", target.name());
-                        Player online = Bukkit.getPlayer(target.uuid());
-                        if (online != null && online.isOnline()) {
-                            mm.sendMessage(online, "tags.all-cleared", "{PREFIX}&cAll your tags have been cleared.");
-                        }
-                    });
-                }
-            } else {
-                CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
-                CosmeticManager cm = plugin.getCosmeticManager();
-                cm.removeCosmetic(target.uuid(), cosmeticType).thenAccept(success -> {
-                    mm.sendMessage(sender, "cosmetics.removed",
-                            "{PREFIX}&aRemoved &e{TYPE} &afrom &e{PLAYER}&a.",
-                            "{TYPE}", cosmeticType.getDisplayName(),
-                            "{PLAYER}", target.name());
+            CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
+            CosmeticManager cm = plugin.getCosmeticManager();
+            cm.removeCosmetic(target.uuid(), cosmeticType).thenAccept(success -> {
+                mm.sendMessage(sender, "cosmetics.removed",
+                        "{PREFIX}&aRemoved &e{TYPE} &afrom &e{PLAYER}&a.",
+                        "{TYPE}", cosmeticType.getDisplayName(),
+                        "{PLAYER}", target.name());
 
-                    Player online = Bukkit.getPlayer(target.uuid());
-                    if (online != null && online.isOnline()) {
-                        mm.sendMessage(online, "cosmetics.target-removed",
-                                "{PREFIX}&cYour &e{TYPE} &ccosmetic has been removed.",
-                                "{TYPE}", cosmeticType.getDisplayName());
-                    }
-                });
-            }
+                Player online = Bukkit.getPlayer(target.uuid());
+                if (online != null && online.isOnline()) {
+                    mm.sendMessage(online, "cosmetics.target-removed",
+                            "{PREFIX}&cYour &e{TYPE} &ccosmetic has been removed.",
+                            "{TYPE}", cosmeticType.getDisplayName());
+                }
+            });
         });
 
         return true;
@@ -411,15 +319,13 @@ public class CosmeticCommandHandler {
     private boolean isFeatureKeyword(String str) {
         if (str == null) return false;
         String lower = str.toLowerCase();
-        return lower.equals("tags") || lower.equals("tag") ||
-               lower.equals("glow") || lower.equals("playerglow") ||
+        return lower.equals("glow") || lower.equals("playerglow") ||
                lower.equals("chatcolor") || lower.equals("color");
     }
 
     private String normalizeFeature(String str) {
         if (str == null) return null;
         String lower = str.toLowerCase();
-        if (lower.equals("tags") || lower.equals("tag")) return "tags";
         if (lower.equals("glow") || lower.equals("playerglow")) return "glow";
         if (lower.equals("chatcolor") || lower.equals("color")) return "chatcolor";
         return null;
@@ -520,16 +426,16 @@ public class CosmeticCommandHandler {
         }
 
         // Standard /escore give <player> ...
-        // 2. /escore give <player> <TAB> -> tags, glow, chatcolor
+        // 2. /escore give <player> <TAB> -> glow, chatcolor
         if (args.length == 3) {
-            return List.of("tags", "glow", "chatcolor").stream()
+            return List.of("glow", "chatcolor").stream()
                     .filter(s -> s.startsWith(args[2].toLowerCase()))
                     .toList();
         }
 
         String feature = normalizeFeature(args[2]);
         if (feature != null) {
-            // 3. /escore give <player> <feature> <TAB> -> Values (tag IDs or colors)
+            // 3. /escore give <player> <feature> <TAB> -> Values (colors)
             if (args.length == 4) {
                 String current = args[3].toLowerCase();
                 return getColorsForFeature(feature).stream()
@@ -567,32 +473,15 @@ public class CosmeticCommandHandler {
             if (fixedType != null) {
                 return List.of("chatcolor").stream().filter(s -> s.startsWith(args[2].toLowerCase())).toList();
             }
-            return List.of("tags", "glow", "chatcolor").stream()
+            return List.of("glow", "chatcolor").stream()
                     .filter(s -> s.startsWith(args[2].toLowerCase()))
                     .toList();
-        }
-        if (args.length == 4 && (args[2].equalsIgnoreCase("tags") || args[2].equalsIgnoreCase("tag"))) {
-            Player target = Bukkit.getPlayerExact(args[1]);
-            String current = args[3].toLowerCase();
-            if (target != null && plugin.getTagManager() != null) {
-                return plugin.getTagManager().getPlayerTags(target.getUniqueId()).getOwnedTags().stream()
-                        .filter(k -> k.toLowerCase().startsWith(current))
-                        .toList();
-            }
-            if (plugin.getTagManager() != null) {
-                return plugin.getTagManager().getRegisteredTags().keySet().stream()
-                        .filter(k -> k.toLowerCase().startsWith(current))
-                        .toList();
-            }
         }
         return List.of();
     }
 
     private List<String> getColorsForFeature(String feature) {
-        if (feature.equals("tags")) {
-            if (plugin.getTagManager() == null) return List.of();
-            return new ArrayList<>(plugin.getTagManager().getRegisteredTags().keySet());
-        } else if (feature.equals("glow")) {
+        if (feature.equals("glow")) {
             if (plugin.getCosmeticManager() == null) return List.of();
             return new ArrayList<>(plugin.getCosmeticManager().getAvailableGlowColors());
         } else if (feature.equals("chatcolor")) {

@@ -158,25 +158,4 @@ public class SQLiteDatabase extends DatabaseManager {
                "expires_at = excluded.expires_at, " +
                "updated_at = CURRENT_TIMESTAMP;";
     }
-
-    @Override
-    protected String getCreateTagsTableSql() {
-        return "CREATE TABLE IF NOT EXISTS escore_player_tags (" +
-               "uuid VARCHAR(36) NOT NULL, " +
-               "tag_id VARCHAR(64) NOT NULL, " +
-               "is_active INTEGER NOT NULL DEFAULT 0, " +
-               "ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT', " +
-               "expires_at BIGINT DEFAULT NULL, " +
-               "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-               "PRIMARY KEY (uuid, tag_id)" +
-               ");";
-    }
-
-    @Override
-    protected String getInsertTagSql() {
-        return "INSERT INTO escore_player_tags (uuid, tag_id, is_active, ownership_type, expires_at) VALUES (?, ?, 0, ?, ?) " +
-               "ON CONFLICT(uuid, tag_id) DO UPDATE SET " +
-               "ownership_type = excluded.ownership_type, " +
-               "expires_at = excluded.expires_at;";
-    }
 }

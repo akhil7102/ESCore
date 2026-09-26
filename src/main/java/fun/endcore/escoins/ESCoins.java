@@ -42,7 +42,6 @@ public class ESCoins extends JavaPlugin {
     private fun.endcore.escoins.chat.ChatManager chatManager;
     private fun.endcore.escoins.arena.ArenaManager arenaManager;
     private fun.endcore.escoins.cosmetics.CosmeticManager cosmeticManager;
-    private fun.endcore.escoins.tags.TagManager tagManager;
     private fun.endcore.escoins.update.UpdateChecker updateChecker;
     private ESCoinsAPI api;
 
@@ -83,10 +82,7 @@ public class ESCoins extends JavaPlugin {
             // 6. Cosmetic Entitlements System (Chat Colors & Player Glow)
             this.cosmeticManager = new fun.endcore.escoins.cosmetics.CosmeticManager(this);
 
-            // 7. Player Tags System
-            this.tagManager = new fun.endcore.escoins.tags.TagManager(this);
-
-            // 8. Commands Registration
+            // 7. Commands Registration
             registerCommands();
 
             // 9. Chat Management System
@@ -165,12 +161,6 @@ public class ESCoins extends JavaPlugin {
         if (cosmeticManager != null) {
             cosmeticManager.stop();
             cosmeticManager = null;
-        }
-
-        // Stop Tags
-        if (tagManager != null) {
-            tagManager.stop();
-            tagManager = null;
         }
 
         // Stop Update Checker
@@ -261,14 +251,6 @@ public class ESCoins extends JavaPlugin {
             arena.setExecutor(arenaCommand);
             arena.setTabCompleter(arenaCommand);
         }
-
-        // /tags
-        fun.endcore.escoins.tags.TagCommand tagCommand = new fun.endcore.escoins.tags.TagCommand(this);
-        PluginCommand tags = getCommand("tags");
-        if (tags != null) {
-            tags.setExecutor(tagCommand);
-            tags.setTabCompleter(tagCommand);
-        }
     }
 
     private void registerPlaceholders() {
@@ -312,9 +294,6 @@ public class ESCoins extends JavaPlugin {
         }
         if (cosmeticManager != null) {
             cosmeticManager.reloadConfig();
-        }
-        if (tagManager != null) {
-            tagManager.reloadConfig();
         }
         if (updateChecker != null) {
             updateChecker.reloadConfig();
@@ -369,10 +348,6 @@ public class ESCoins extends JavaPlugin {
 
     public fun.endcore.escoins.cosmetics.CosmeticManager getCosmeticManager() {
         return cosmeticManager;
-    }
-
-    public fun.endcore.escoins.tags.TagManager getTagManager() {
-        return tagManager;
     }
 
     public fun.endcore.escoins.update.UpdateChecker getUpdateChecker() {

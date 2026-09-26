@@ -155,30 +155,6 @@ public class ESCoreCoinsExpansion extends PlaceholderExpansion {
                     .orElse("None");
         }
 
-        // ========================================================
-        // Player Tags Placeholders
-        // ========================================================
-
-        // %escore_tag% or %escore_tag_display%
-        if (lower.equals("tag") || lower.equals("tag_display") || lower.equals("active_tag") || lower.equals("tag_active")) {
-            if (player == null || plugin.getTagManager() == null) return "";
-            String display = plugin.getTagManager().getActiveTagDisplay(player.getUniqueId());
-            return display != null ? display : "";
-        }
-
-        // %escore_tag_raw% or %escore_tag_name% or %escore_tag_id%
-        if (lower.equals("tag_raw") || lower.equals("tag_name") || lower.equals("tag_id")) {
-            if (player == null || plugin.getTagManager() == null) return "";
-            String active = plugin.getTagManager().getActiveTag(player.getUniqueId());
-            return active != null ? active : "";
-        }
-
-        // %escore_tags_count% or %escore_tags_owned%
-        if (lower.equals("tags_count") || lower.equals("tags_owned") || lower.equals("tag_count")) {
-            if (player == null || plugin.getTagManager() == null) return "0";
-            return String.valueOf(plugin.getTagManager().getPlayerTags(player.getUniqueId()).getOwnedTags().size());
-        }
-
         return null;
     }
 }

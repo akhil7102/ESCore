@@ -6,8 +6,6 @@ import fun.endcore.escoins.cosmetics.CosmeticEntry;
 import fun.endcore.escoins.cosmetics.CosmeticType;
 import fun.endcore.escoins.cosmetics.OwnershipType;
 import fun.endcore.escoins.economy.TransactionRecord;
-import fun.endcore.escoins.tags.PlayerTagData;
-import fun.endcore.escoins.tags.TagEntry;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -47,10 +45,6 @@ public abstract class DatabaseManager {
 
     protected abstract String getUpsertCosmeticSql();
 
-    protected abstract String getCreateTagsTableSql();
-
-    protected abstract String getInsertTagSql();
-
     /**
      * Initializes tables and indices.
      */
@@ -70,23 +64,11 @@ public abstract class DatabaseManager {
             // Create cosmetics table
             stmt.executeUpdate(getCreateCosmeticsTableSql());
 
-            // Create tags table
-            stmt.executeUpdate(getCreateTagsTableSql());
-
-            // Migration check: ensure ownership_type and expires_at exist in escore_player_tags
-            try {
-                stmt.executeUpdate("ALTER TABLE escore_player_tags ADD COLUMN ownership_type VARCHAR(16) NOT NULL DEFAULT 'PERMANENT';");
-            } catch (SQLException ignored) {}
-            try {
-                stmt.executeUpdate("ALTER TABLE escore_player_tags ADD COLUMN expires_at BIGINT DEFAULT NULL;");
-            } catch (SQLException ignored) {}
-
             // Create indices
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escoins_players_balance ON escoins_players(balance DESC);");
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escoins_players_name ON escoins_players(username);");
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escoins_tx_player ON escoins_transactions(player_uuid);");
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escore_cosmetics_uuid ON escore_player_cosmetics(uuid);");
-            stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escore_tags_uuid ON escore_player_tags(uuid);");
         }
     }
 
@@ -593,146 +575,4 @@ public abstract class DatabaseManager {
         }
     }
 
-    // ========================================================
-    // Player Tags System
-    // ========================================================
-
-    /**
-     * Loads all owned tags and active status for a player.
-     */
-    public PlayerTagData loadPlayerTags(UUID uuid) {
-        PlayerTagData data = new PlayerTagData(uuid);
-        String sql = "SELECT tag_id, is_active, ownership_type, expires_at FROM escore_player_tags WHERE uuid = ?;";
-        List<String> expiredTagIds = new ArrayList<>();
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, uuid.toString());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String tagId = rs.getString("tag_id");
-                    boolean isActive = rs.getInt("is_active") == 1;
-                    String ownerTypeStr = rs.getString("ownership_type");
-                    OwnershipType ownershipType = OwnershipType.fromString(ownerTypeStr);
-                    Long expiresAt = rs.getObject("expires_at") != null ? rs.getLong("expires_at") : null;
-
-                    TagEntry entry = new TagEntry(tagId, ownershipType, expiresAt);
-                    if (entry.isExpired()) {
-                        expiredTagIds.add(tagId);
-                    } else {
-                        data.addTag(entry);
-                        if (isActive) {
-                            data.setActiveTag(tagId);
-                        }
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            if (plugin != null) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to load player tags for " + uuid, e);
-            }
-        }
-
-        if (!expiredTagIds.isEmpty()) {
-            CompletableFuture.runAsync(() -> {
-                for (String expiredTagId : expiredTagIds) {
-                    removePlayerTag(uuid, expiredTagId);
-                }
-            });
-        }
-        return data;
-    }
-
-    /**
-     * Adds an owned tag to a player with specific ownership and optional expiration timestamp.
-     */
-    public boolean addPlayerTag(UUID uuid, String tagId, OwnershipType ownershipType, Long expiresAt) {
-        String sql = getInsertTagSql();
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, uuid.toString());
-            ps.setString(2, tagId.toUpperCase());
-            ps.setString(3, ownershipType != null ? ownershipType.name() : OwnershipType.PERMANENT.name());
-            if (expiresAt != null) {
-                ps.setLong(4, expiresAt);
-            } else {
-                ps.setNull(4, java.sql.Types.BIGINT);
-            }
-            ps.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            if (plugin != null) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to add tag " + tagId + " for " + uuid, e);
-            }
-            return false;
-        }
-    }
-
-    /**
-     * Adds an owned tag to a player (permanent).
-     */
-    public boolean addPlayerTag(UUID uuid, String tagId) {
-        return addPlayerTag(uuid, tagId, OwnershipType.PERMANENT, null);
-    }
-
-    /**
-     * Removes an owned tag from a player.
-     */
-    public boolean removePlayerTag(UUID uuid, String tagId) {
-        String sql = "DELETE FROM escore_player_tags WHERE uuid = ? AND UPPER(tag_id) = UPPER(?);";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, uuid.toString());
-            ps.setString(2, tagId.toUpperCase());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            if (plugin != null) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to remove tag " + tagId + " for " + uuid, e);
-            }
-            return false;
-        }
-    }
-
-    /**
-     * Clears all owned tags for a player.
-     */
-    public boolean clearPlayerTags(UUID uuid) {
-        String sql = "DELETE FROM escore_player_tags WHERE uuid = ?;";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, uuid.toString());
-            return ps.executeUpdate() >= 0;
-        } catch (SQLException e) {
-            if (plugin != null) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to clear tags for " + uuid, e);
-            }
-            return false;
-        }
-    }
-
-    /**
-     * Sets a player's active tag, or clears active tag if tagId is null.
-     */
-    public boolean setPlayerActiveTag(UUID uuid, String tagId) {
-        String clearSql = "UPDATE escore_player_tags SET is_active = 0 WHERE uuid = ?;";
-        String setSql = "UPDATE escore_player_tags SET is_active = 1 WHERE uuid = ? AND UPPER(tag_id) = UPPER(?);";
-        try (Connection conn = getConnection()) {
-            try (PreparedStatement psClear = conn.prepareStatement(clearSql)) {
-                psClear.setString(1, uuid.toString());
-                psClear.executeUpdate();
-            }
-            if (tagId != null && !tagId.trim().isEmpty()) {
-                try (PreparedStatement psSet = conn.prepareStatement(setSql)) {
-                    psSet.setString(1, uuid.toString());
-                    psSet.setString(2, tagId.toUpperCase());
-                    psSet.executeUpdate();
-                }
-            }
-            return true;
-        } catch (SQLException e) {
-            if (plugin != null) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to set active tag for " + uuid, e);
-            }
-            return false;
-        }
-    }
 }

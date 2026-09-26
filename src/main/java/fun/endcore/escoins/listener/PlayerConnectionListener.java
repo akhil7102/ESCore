@@ -25,9 +25,6 @@ public class PlayerConnectionListener implements Listener {
         if (plugin.getCosmeticManager() != null) {
             plugin.getCosmeticManager().onPlayerJoin(event.getPlayer());
         }
-        if (plugin.getTagManager() != null) {
-            plugin.getTagManager().onPlayerJoin(event.getPlayer());
-        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -37,14 +34,14 @@ public class PlayerConnectionListener implements Listener {
         if (plugin.getCosmeticManager() != null) {
             plugin.getCosmeticManager().onPlayerQuit(event.getPlayer());
         }
-        if (plugin.getTagManager() != null) {
-            plugin.getTagManager().onPlayerQuit(event.getPlayer());
+        if (plugin.getArenaManager() != null) {
+            plugin.getArenaManager().clearSelection(event.getPlayer().getUniqueId());
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (event.hasChangedBlock()) {
+        if (plugin.getSpawnManager().hasPendingTeleports() && event.hasChangedBlock()) {
             plugin.getSpawnManager().onPlayerMove(event.getPlayer(), event.getFrom(), event.getTo());
         }
     }
