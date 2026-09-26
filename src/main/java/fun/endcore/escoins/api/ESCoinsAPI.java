@@ -1,0 +1,336 @@
+package fun.endcore.escoins.api;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Public API for ESCoins premium currency system.
+ * Allows other plugins and external systems to query and modify player coin balances.
+ */
+public interface ESCoinsAPI {
+
+    /**
+     * Gets the current coin balance of a player.
+     * If the player is online or cached, returns instantly without database query.
+     *
+     * @param uuid the player's unique identifier
+     * @return the current balance as a long
+     */
+    long getBalance(UUID uuid);
+
+    /**
+     * Asynchronously retrieves the coin balance of a player.
+     *
+     * @param uuid the player's unique identifier
+     * @return a CompletableFuture yielding the balance
+     */
+    CompletableFuture<Long> getBalanceAsync(UUID uuid);
+
+    /**
+     * Checks if a player has at least the specified coin balance.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the required coin balance
+     * @return true if the player has at least the amount, false otherwise
+     */
+    boolean hasBalance(UUID uuid, long amount);
+
+    /**
+     * Adds coins to a player's balance.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to add (must be > 0)
+     * @return true if successful, false if cancelled or error
+     */
+    boolean giveCoins(UUID uuid, long amount);
+
+    /**
+     * Adds coins to a player's balance with a specific audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to add
+     * @param source the audit source (e.g. "Store", "Console", "PluginName")
+     * @return true if successful
+     */
+    boolean giveCoins(UUID uuid, long amount, String source);
+
+    /**
+     * Asynchronously adds coins to a player's balance.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to add
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> giveCoinsAsync(UUID uuid, long amount);
+
+    /**
+     * Asynchronously adds coins to a player's balance with an audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to add
+     * @param source the audit source
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> giveCoinsAsync(UUID uuid, long amount, String source);
+
+    /**
+     * Deducts coins from a player's balance.
+     * Never allows balance to become negative.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to deduct
+     * @return true if successfully deducted, false if insufficient balance or cancelled
+     */
+    boolean takeCoins(UUID uuid, long amount);
+
+    /**
+     * Deducts coins from a player's balance with an audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to deduct
+     * @param source the audit source (e.g. "CoinShop", "Console")
+     * @return true if successfully deducted, false if insufficient or cancelled
+     */
+    boolean takeCoins(UUID uuid, long amount, String source);
+
+    /**
+     * Asynchronously deducts coins from a player's balance.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to deduct
+     * @return a CompletableFuture yielding true if deducted
+     */
+    CompletableFuture<Boolean> takeCoinsAsync(UUID uuid, long amount);
+
+    /**
+     * Asynchronously deducts coins from a player's balance with an audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the amount of coins to deduct
+     * @param source the audit source
+     * @return a CompletableFuture yielding true if deducted
+     */
+    CompletableFuture<Boolean> takeCoinsAsync(UUID uuid, long amount, String source);
+
+    /**
+     * Sets a player's coin balance to an exact amount.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the new coin balance (must be >= 0)
+     * @return true if successful, false otherwise
+     */
+    boolean setBalance(UUID uuid, long amount);
+
+    /**
+     * Sets a player's coin balance with an audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the new coin balance
+     * @param source the audit source
+     * @return true if successful
+     */
+    boolean setBalance(UUID uuid, long amount, String source);
+
+    /**
+     * Asynchronously sets a player's coin balance.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the new coin balance
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> setBalanceAsync(UUID uuid, long amount);
+
+    /**
+     * Asynchronously sets a player's coin balance with an audit source.
+     *
+     * @param uuid the player's unique identifier
+     * @param amount the new coin balance
+     * @param source the audit source
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> setBalanceAsync(UUID uuid, long amount, String source);
+
+    /**
+     * Transfers coins atomically between two players.
+     *
+     * @param sender the player sending the coins
+     * @param receiver the player receiving the coins
+     * @param amount the amount of coins to transfer
+     * @return true if transfer was successful, false if sender has insufficient coins or cancelled
+     */
+    boolean transferCoins(UUID sender, UUID receiver, long amount);
+
+    /**
+     * Asynchronously transfers coins atomically between two players.
+     *
+     * @param sender the player sending the coins
+     * @param receiver the player receiving the coins
+     * @param amount the amount of coins to transfer
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> transferCoinsAsync(UUID sender, UUID receiver, long amount);
+
+    /**
+     * Retrieves the top coin balances from the high-performance in-memory cache.
+     *
+     * @param limit maximum entries to return
+     * @return immutable list of LeaderboardEntry
+     */
+    List<LeaderboardEntry> getTopLeaderboard(int limit);
+
+    /**
+     * Gets the leaderboard position (rank) of a player.
+     *
+     * @param uuid the player's unique identifier
+     * @return 1-indexed position, or -1 if not in top leaderboard
+     */
+    int getLeaderboardPosition(UUID uuid);
+
+    /**
+     * Gets the server-wide global rank position of a player (1-indexed), or -1 if unranked.
+     *
+     * @param uuid the player's unique identifier
+     * @return 1-indexed global rank position (e.g. 1, 2, 15), or -1 if unranked
+     */
+    int getGlobalRank(UUID uuid);
+
+    // ========================================================
+    // Cosmetic Entitlements API (Chat Colors & Player Glow)
+    // ========================================================
+
+    /**
+     * Grants a permanent cosmetic perk to a player.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type (CHAT_COLOR or PLAYER_GLOW)
+     * @param color the color name
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> givePermanentCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type, String color);
+
+    /**
+     * Grants a temporary cosmetic perk to a player.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @param color the color name
+     * @param durationMillis duration in milliseconds
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> giveTemporaryCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type, String color, long durationMillis);
+
+    /**
+     * Removes an active cosmetic perk from a player.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @return a CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> removeCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    /**
+     * Gets a player's active cosmetic entry if active and not expired.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @return Optional containing the active cosmetic entry, or empty
+     */
+    java.util.Optional<fun.endcore.escoins.cosmetics.CosmeticEntry> getActiveCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    /**
+     * Checks if a player has an active cosmetic perk.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @return true if player has an active perk
+     */
+    boolean hasCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    // ========================================================
+    // Player Tags System API
+    // ========================================================
+
+    /**
+     * Grants tag ownership to a player.
+     *
+     * @param uuid the player's unique identifier
+     * @param tagId the tag identifier
+     * @return CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> giveTag(UUID uuid, String tagId);
+
+    /**
+     * Removes tag ownership from a player.
+     *
+     * @param uuid the player's unique identifier
+     * @param tagId the tag identifier
+     * @return CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> removeTag(UUID uuid, String tagId);
+
+    /**
+     * Clears all tag ownership from a player.
+     *
+     * @param uuid the player's unique identifier
+     * @return CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> clearTags(UUID uuid);
+
+    /**
+     * Sets the active tag for a player. Pass null to unselect active tag.
+     *
+     * @param uuid the player's unique identifier
+     * @param tagId the tag identifier or null to clear
+     * @return CompletableFuture yielding true if successful
+     */
+    CompletableFuture<Boolean> setActiveTag(UUID uuid, String tagId);
+
+    /**
+     * Gets the set of owned tag IDs for a player.
+     *
+     * @param uuid the player's unique identifier
+     * @return set of owned tag identifiers
+     */
+    java.util.Set<String> getOwnedTags(UUID uuid);
+
+    /**
+     * Gets the player's active tag ID, or null if none.
+     *
+     * @param uuid the player's unique identifier
+     * @return active tag identifier or null
+     */
+    String getActiveTag(UUID uuid);
+
+    /**
+     * Gets the formatted display string of the player's active tag, or empty string if none.
+     *
+     * @param uuid the player's unique identifier
+     * @return formatted display string or empty string
+     */
+    String getActiveTagDisplay(UUID uuid);
+
+    /**
+     * Checks if a player owns a specific tag.
+     *
+     * @param uuid the player's unique identifier
+     * @param tagId the tag identifier
+     * @return true if player owns the tag
+     */
+    boolean hasTag(UUID uuid, String tagId);
+
+    /**
+     * Checks if a tag ID is registered in tags.yml.
+     *
+     * @param tagId the tag identifier
+     * @return true if valid
+     */
+    boolean isValidTag(String tagId);
+
+    /**
+     * Gets an unmodifiable map of all registered tags.
+     *
+     * @return map of tag ID to TagDefinition
+     */
+    java.util.Map<String, fun.endcore.escoins.tags.TagDefinition> getRegisteredTags();
+}

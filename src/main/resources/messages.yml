@@ -1,0 +1,244 @@
+# ========================================================
+#            ESCore - Messages Configuration
+# ========================================================
+
+# The global prefix for all ESCore messages.
+# Configured with the server branding and classic arrow separator.
+prefix: "&#33A2FF&lC&#29ACFF&lO&#1EB6FF&lR&#14BFFF&lE &#0AC9FF&lS&#00D3FF&lM&#00E5FF&lP&r &8▶ "
+
+# General Messages
+no-permission: "{PREFIX}&cYou do not have permission to execute this command."
+player-only: "{PREFIX}&cThis command can only be executed by players."
+player-not-found: "{PREFIX}&cPlayer &e{PLAYER} &cnot found."
+reload-success: "{PREFIX}&aConfiguration files and systems reloaded successfully."
+
+# ESCore Core Command Messages
+core:
+  header: "&8----------------------------------------"
+  version: "&7Version: &ev1.0"
+  author: "&7Author: &eAKHILPLAYZYT"
+  features: "&7Features: &fCoins &8| &fClearLag &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags"
+  cmd-reload: "&e/escore reload &7- Reload all configurations"
+  cmd-coins: "&e/coins &7- Manage and view premium coins"
+  cmd-clearlag: "&e/clearlag &7- Manage entity cleanup system"
+  cmd-spawn: "&e/spawn &7- Teleport to server spawn"
+  cmd-setspawn: "&e/setspawn &7- Set server spawn location"
+  cmd-arena: "&e/arena regen &7- Arena regeneration system"
+  cmd-tag: "&e/escore tag <give|remove|clear|list> &7- Manage player tags"
+  cmd-tags: "&e/tags &7- Player chat tags"
+  cmd-cc: "&e/cc &7- Chat color cosmetic shortcuts"
+  cmd-update: "&e/escore update <check|status> &7- BuiltByBit update checker"
+  footer: "&8----------------------------------------"
+
+# First Join Welcome Announcement
+first-join: "&c❤ &fWelcome &c{PLAYER} &fto &#FF3366&lSERVER&f! &7[&#FF3366#{COUNT}&7]"
+
+# Death Messages System
+death-messages:
+  player: "&7☠ &c{VICTIM} &7was defeated by &a{KILLER}"
+  explosion: "&7☠ &c{VICTIM} &7was defeated by &aan Explosion"
+  mob: "&7☠ &c{VICTIM} &7was defeated by &a{KILLER}"
+  fall: "&7☠ &c{VICTIM} &7hit the ground too hard"
+  void: "&7☠ &c{VICTIM} &7fell into the &aVoid"
+  lava: "&7☠ &c{VICTIM} &7tried to swim in &aLava"
+  fire: "&7☠ &c{VICTIM} &7went up in &aFlames"
+  drowning: "&7☠ &c{VICTIM} &7drowned"
+  magic: "&7☠ &c{VICTIM} &7was defeated by &aMagic"
+  wither: "&7☠ &c{VICTIM} &7withered away"
+  starvation: "&7☠ &c{VICTIM} &7starved to death"
+  suffocation: "&7☠ &c{VICTIM} &7suffocated in a wall"
+  lightning: "&7☠ &c{VICTIM} &7was struck by lightning"
+  default: "&7☠ &c{VICTIM} &7was defeated by &a{CAUSE}"
+
+# Spawn System Messages
+spawn:
+  not-set: "{PREFIX}&cSpawn location has not been set yet."
+  set-success: "{PREFIX}&aServer spawn location has been set to your current position."
+  teleport-countdown: "{PREFIX}&7Teleporting in &e{TIME}&7 seconds... Don't move!"
+  teleport-cancelled: "{PREFIX}&cTeleport cancelled because you moved!"
+  teleport-success: "{PREFIX}&aTeleported to spawn!"
+  already-teleporting: "{PREFIX}&cYou already have a pending teleport in progress."
+
+# Coin Economy Messages
+coins:
+  balance: "{PREFIX}&7You have &e{BALANCE} Coins&7."
+  balance-other: "{PREFIX}&e{PLAYER} &7has &e{BALANCE} Coins&7."
+
+  pay:
+    sender: "{PREFIX}&7You sent &e{AMOUNT} Coins &7to &e{PLAYER}&7."
+    receiver: "{PREFIX}&7You received &e{AMOUNT} Coins &7from &e{PLAYER}&7."
+
+  insufficient: "{PREFIX}&cYou don't have enough Coins."
+  invalid-amount: "{PREFIX}&cEnter a valid amount."
+  self-payment: "{PREFIX}&cYou cannot send Coins to yourself."
+
+  give: "{PREFIX}&aAdded &e{AMOUNT} Coins &ato &e{PLAYER}&a."
+  take: "{PREFIX}&cRemoved &e{AMOUNT} Coins &cfrom &e{PLAYER}&c."
+  set: "{PREFIX}&aSet &e{PLAYER}'s &abalance to &e{AMOUNT} Coins&a."
+
+  top:
+    header: "&8---------------- &bCoins Leaderboard &8----------------"
+    entry: "&6#{POSITION} &e{PLAYER} &7- &a{AMOUNT} Coins"
+    empty: "{PREFIX}&7No player data found for top coins."
+    footer: "&8----------------------------------------"
+
+  help:
+    header: "&8---------------- &bCoins Commands &8----------------"
+    balance: "&e/coins balance [player] &7- View coin balance"
+    pay: "&e/coins pay <player> <amount> &7- Send coins to a player"
+    top: "&e/coins top &7- View coin leaderboard"
+    give: "&e/coins give <player> <amount> &7- Give coins to a player"
+    take: "&e/coins take <player> <amount> &7- Take coins from a player"
+    set: "&e/coins set <player> <amount> &7- Set player's coin balance"
+    reload: "&e/coins reload &7- Reload all configurations"
+    footer: "&8----------------------------------------"
+
+# ClearLag Messages (Using Cleaner Prefix)
+clearlag:
+  prefix: "&#FF3366&lCLEANER &8▶ "
+  warning: "{CLEARLAG_PREFIX}&fDropped entities are clearing in &c{TIME}s."
+  complete: "{CLEARLAG_PREFIX}&fDropped entities have been cleared &7(&c{TOTAL} &7removed)."
+  cleared-manual: "{CLEARLAG_PREFIX}&aManual cleanup complete: removed &e{TOTAL} &aentities."
+  manual-start: "{CLEARLAG_PREFIX}&eExecuting entity cleanup..."
+  reload: "{CLEARLAG_PREFIX}&aClearLag configuration reloaded."
+
+  status:
+    header: "&8---------------- &bClearLag Status &8----------------"
+    next-cleanup: "&7Next cleanup in: &e{TIME} &7seconds"
+    interval: "&7Interval: &e{INTERVAL} &7seconds"
+    last-removed: "&7Last cleanup removed: &e{TOTAL} &7entities (Items: &e{ITEMS}&7, Mobs: &e{MOBS}&7, Proj: &e{PROJECTILES}&7, XP: &e{XP}&7)"
+    status-disabled: "&cClearLag system is currently disabled."
+    footer: "&8----------------------------------------"
+
+  help:
+    header: "&8---------------- &bClearLag Commands &8----------------"
+    clear: "&e/clearlag clear &7- Manually trigger entity removal"
+    status: "&e/clearlag status &7- View cleanup timer and statistics"
+    reload: "&e/clearlag reload &7- Reload ClearLag settings"
+    footer: "&8----------------------------------------"
+
+# Arena Regeneration System Messages
+arena:
+  wand-given: "{PREFIX}&aYou received the Arena Selection Wand. Left-click for Pos 1, right-click for Pos 2."
+  pos1-set: "{PREFIX}&aPosition 1 set to &e{X}, {Y}, {Z} &a({WORLD})."
+  pos2-set: "{PREFIX}&aPosition 2 set to &e{X}, {Y}, {Z} &a({WORLD})."
+  selection-info: "{PREFIX}&7Cuboid size: &e{SIZE_X}x{SIZE_Y}x{SIZE_Z} &7(&e{BLOCKS} &7blocks)."
+  create-usage: "{PREFIX}&cUsage: /arena regen create <arena>"
+  save-usage: "{PREFIX}&cUsage: /arena regen <arena> save"
+  regen-usage: "{PREFIX}&cUsage: /arena regen regenerate <arena>"
+  delete-usage: "{PREFIX}&cUsage: /arena regen delete <arena>"
+  created: "{PREFIX}&aArena &e{ARENA} &acreated successfully! &7({BLOCKS} blocks)"
+  saving: "{PREFIX}&7Saving snapshot for arena &e{ARENA}&7..."
+  saved: "{PREFIX}&aSnapshot for arena &e{ARENA} &asaved successfully! &7({BLOCKS} blocks)"
+  regenerating: "{PREFIX}&7Regenerating arena &e{ARENA}&7..."
+  regenerated: "{PREFIX}&aArena &e{ARENA} &aregenerated successfully! &7({MODIFIED} blocks changed in {TIME}ms)"
+  deleted: "{PREFIX}&aArena &e{ARENA} &adeleted successfully."
+  list-header: "&8&m----------------&r &b&lArenas &8&m----------------"
+  list-entry: "&e{ARENA} &7- &f{WORLD} &8(&7{SIZE_X}x{SIZE_Y}x{SIZE_Z}&8, &7{BLOCKS} blocks&8) {SNAPSHOT_STATUS}"
+  list-empty: "{PREFIX}&7No arenas have been created yet."
+  list-footer: "&8----------------------------------------"
+
+  help:
+    header: "&8&m----------------&r &b&lArena Commands &8&m----------------"
+    wand: "&e/arena regen wand &7- Get the selection wand"
+    create: "&e/arena regen create <arena> &7- Create arena from wand selection"
+    save: "&e/arena regen <arena> save &7- Save current arena as snapshot"
+    regenerate: "&e/arena regen regenerate <arena> &7- Restore arena from snapshot"
+    list: "&e/arena regen list &7- List all arenas"
+    delete: "&e/arena regen delete <arena> &7- Delete an arena"
+    footer: "&8----------------------------------------"
+
+# Cosmetic Entitlements Messages
+cosmetics:
+  given-perm: "{PREFIX}&aGranted permanent &e{COLOR} {TYPE} &ato &e{PLAYER}&a."
+  given-temp: "{PREFIX}&aGranted temporary &e{COLOR} {TYPE} &ato &e{PLAYER} &afor &e{DURATION}&a."
+  received-perm: "{PREFIX}&aYou received permanent &e{COLOR} {TYPE}&a!"
+  received-temp: "{PREFIX}&aYou received temporary &e{COLOR} {TYPE} &afor &e{DURATION}&a!"
+  removed: "{PREFIX}&aRemoved &e{TYPE} &afrom &e{PLAYER}&a."
+  target-removed: "{PREFIX}&cYour &e{TYPE} &ccosmetic has been removed."
+  expired: "{PREFIX}&cYour &e{TYPE} &ccosmetic has expired."
+  invalid-color: "{PREFIX}&cInvalid color &e{COLOR}&c. Available: &7{COLORS}"
+  invalid-ownership: "{PREFIX}&cInvalid ownership type &e{TYPE}&c. Use &eperm &cor &etemp <duration>&c."
+  missing-duration: "{PREFIX}&cYou must specify a duration for temporary cosmetics. Examples: 30m, 12h, 5d, 2w"
+  invalid-duration: "{PREFIX}&c{ERROR}"
+  error: "{PREFIX}&cAn error occurred while updating cosmetics."
+  usage-give: "{PREFIX}&cUsage: /escore give <player> <chatcolor|playerglow> <color> <perm|temp [duration]>"
+  usage-remove: "{PREFIX}&cUsage: /escore remove <player> <chatcolor|playerglow>"
+  usage-chatcolor: "{PREFIX}&cUsage: /escore give <player> chatcolor <color> <perm|temp [duration]>"
+  usage-remove-chatcolor: "{PREFIX}&cUsage: /escore remove <player> chatcolor"
+  usage-playerglow: "{PREFIX}&cUsage: /escore give <player> playerglow <color> <perm|temp [duration]>"
+  usage-remove-playerglow: "{PREFIX}&cUsage: /escore remove <player> playerglow"
+  cc-help:
+    header: "&8&m----------------&r &b&lChat Color Management &8&m----------------"
+    give-perm: "&e/cc give <player> chatcolor <color> perm &7- Grant permanent chat color"
+    give-temp: "&e/cc give <player> chatcolor <color> temp <duration> &7- Grant temporary chat color"
+    remove: "&e/cc remove <player> chatcolor &7- Remove player's chat color"
+    footer: "&8&m----------------------------------------------------"
+
+# Player Tags Messages
+tags:
+  header: "&8&m----------------&r &b&lPlayer Tags &8&m----------------"
+  status: "&7Current Tag: &r{TAG_DISPLAY} &7({TAG_NAME})"
+  owned-count: "&7Owned Tags: &e{COUNT}"
+  help-list: "&e/tags list &7- View your owned tags"
+  help-select: "&e/tags select <tag> &7- Select active chat tag"
+  help-remove: "&e/tags remove &7- Remove active chat tag"
+  footer: "&8&m----------------------------------------"
+  list-empty: "{PREFIX}&cYou do not own any tags."
+  list-header: "&8&m----------------&r &b&lYour Owned Tags &8&m----------------"
+  list-entry-active: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7) &a&l[ACTIVE]"
+  list-entry: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7)"
+  list-footer: "&8&m------------------------------------------------"
+  select-usage: "{PREFIX}&cUsage: /tags select <tag>"
+  not-found: "{PREFIX}&cTag '&e{TAG}&c' does not exist."
+  not-owned: "{PREFIX}&cYou do not own the '&e{TAG}&c' tag."
+  selected: "{PREFIX}&aSelected &r{TAG_DISPLAY} &aas your active tag!"
+  none-active: "{PREFIX}&cYou do not have an active tag selected."
+  removed: "{PREFIX}&aRemoved your active tag. It will no longer appear in chat."
+  error: "{PREFIX}&cAn error occurred while updating tag."
+  received: "{PREFIX}&aYou were granted the &r{TAG_DISPLAY} &atag! Use &e/tags select {TAG} &ato activate it."
+  revoked: "{PREFIX}&cThe &r{TAG_DISPLAY} &ctag was removed from your account."
+  all-cleared: "{PREFIX}&cAll your tags have been cleared."
+  admin:
+    give-usage: "{PREFIX}&cUsage: /escore tag give <player> <tag>"
+    already-owns: "{PREFIX}&e{PLAYER} &calready owns the '&e{TAG}&c' tag."
+    given: "{PREFIX}&aSuccessfully granted tag &r{TAG_DISPLAY} &ato &e{PLAYER}&a."
+    remove-usage: "{PREFIX}&cUsage: /escore tag remove <player> <tag>"
+    not-owned: "{PREFIX}&e{PLAYER} &cdoes not own the '&e{TAG}&c' tag."
+    removed: "{PREFIX}&aSuccessfully removed tag &r{TAG_DISPLAY} &afrom &e{PLAYER}&a."
+    clear-usage: "{PREFIX}&cUsage: /escore tag clear <player>"
+    cleared: "{PREFIX}&aSuccessfully cleared all tags from &e{PLAYER}&a."
+    list-empty: "{PREFIX}&7No tags configured in tags.yml."
+    list-header: "&8&m----------------&r &b&lAvailable Tags &8&m----------------"
+    list-entry: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7)"
+    list-footer: "&8&m--------------------------------------------------"
+    help-header: "&8&m----------------&r &b&lTag Admin Commands &8&m----------------"
+    help-give: "&e/escore tag give <player> <tag> &7- Grant tag to player"
+    help-remove: "&e/escore tag remove <player> <tag> &7- Remove tag from player"
+    help-clear: "&e/escore tag clear <player> &7- Clear all tags from player"
+    help-list: "&e/escore tag list &7- List all configured tags"
+    help-footer: "&8&m----------------------------------------------------"
+
+# BuiltByBit Update Notifier Messages
+update:
+  no-new: "{PREFIX}&aNo new Core SMP updates were found."
+  check-started: "{PREFIX}&7Checking BuiltByBit for updates..."
+  check-in-progress: "{PREFIX}&7An update check is already in progress..."
+  failed: "{PREFIX}&cCould not check BuiltByBit for updates: &e{REASON}"
+  baseline-saved: "{PREFIX}&aUpdate checker baseline established: &e{TITLE}"
+  not-available: "{PREFIX}&cUpdate checker is currently disabled or unavailable."
+  chat-notify:
+    - "&8&m--------------------------------"
+    - "&b&lEsCore &8» &fA new Core SMP update is available!"
+    - "&fUpdate: &e{UPDATE_TITLE}"
+    - "&fPublished: &7{UPDATE_DATE}"
+    - "&fView: &b{UPDATE_URL}"
+    - "&8&m--------------------------------"
+  status-header: "&8&m----------------&r &b&lEsCore Update Checker &8&m----------------"
+  status-enabled: "&7Status: &r{STATUS}"
+  status-interval: "&7Interval: &e{INTERVAL} seconds"
+  status-last-check: "&7Last Check: &e{LAST_CHECK}"
+  status-last-update: "&7Last Update: &e{TITLE}"
+  status-last-date: "&7Last Update Date: &7{DATE}"
+  status-next-check: "&7Next Check: &e{NEXT_CHECK}"
+  status-footer: "&8&m----------------------------------------------------"

@@ -1,0 +1,216 @@
+# ========================================================
+#            ESCore - Main Configuration
+# ========================================================
+
+# Leaderboard Cache Settings
+leaderboard:
+  enabled: true
+  size: 10
+  refresh-interval: 30 # seconds
+
+# Number Formatting Settings
+formatting:
+  thousands-separator: ","
+  grouping-size: 3
+
+# Server Spawn System Settings
+spawn:
+  set: false
+  world: world
+  x: 0.5
+  y: 64.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+  teleport-delay: 3 # seconds (0 for instant)
+  cancel-on-move: true
+  sound: "ENTITY_ENDERMAN_TELEPORT"
+
+# First Join Welcome Announcement
+first-join-message:
+  enabled: true
+
+# Death Messages System
+death-messages:
+  enabled: true
+
+# ClearLag System Settings
+clearlag:
+  enabled: true
+
+  # Interval between automatic entity cleanups in seconds (600 = 10 minutes)
+  interval: 600
+
+  # Countdown warning intervals in seconds before cleanup occurs
+  warnings:
+    - 30
+    - 15
+    - 10
+    - 5
+    - 4
+    - 3
+    - 2
+    - 1
+
+  # Target worlds to clean up (leave empty to clean all loaded worlds)
+  worlds:
+    - world
+    - world_nether
+    - world_the_end
+
+  # Worlds explicitly excluded from cleanup
+  excluded-worlds: []
+
+  # Entity categories to remove
+  entities:
+    dropped-items: true
+    mobs: true
+    animals: false
+    projectiles: true
+    xp-orbs: true
+    vehicles: false
+    armor-stands: false
+
+  # Protection filters (never removed if true)
+  protection:
+    named-entities: true
+    persistent-entities: true
+
+  # Optional ActionBar warning message
+  actionbar:
+    enabled: false
+    content: '{CLEARLAG_PREFIX}&fDropped entities are clearing in &c{0}s.'
+    duration: 0
+
+  # Optional Title / Subtitle warning message
+  titles:
+    enabled: true
+    titleContent: ''
+    subtitleContent: '{CLEARLAG_PREFIX}&fRemoval in &c{0}s.'
+
+  # Sound effects for warnings and cleanup (ting sound)
+  sound:
+    enabled: true
+    # Sound to play during warnings (BLOCK_NOTE_BLOCK_PLING produces the classic crisp 'ting' sound)
+    name: "BLOCK_NOTE_BLOCK_PLING"
+    volume: 1.0
+    pitch: 1.0
+    # Dynamic escalating pitch during the final seconds (5, 4, 3, 2, 1) for the subtitle counter
+    countdown-pitch-increase: true
+    # Sound to play when cleanup completes (high-pitch ting)
+    complete-sound: "BLOCK_NOTE_BLOCK_PLING"
+    complete-pitch: 2.0
+
+# Chat Formatting & Interactive Hover Tooltip System
+chat:
+  enabled: true
+  format: "{PREFIX}&f{PLAYER} &7▶ &f{MESSAGE}"
+  default-prefix: "&f&lMEMBER "
+  click:
+    action: "SUGGEST_COMMAND"
+    value: "/msg {PLAYER} "
+  hover:
+    enabled: true
+    lines:
+      - "{PREFIX}&f{PLAYER}"
+      - "&a$ &fMoney: &a{MONEY}"
+      - "&b⚑ &fTeam: &b{TEAM}"
+      - "&c⚔ &fKills: &c{KILLS}"
+      - "&6☠ &fDeaths: &6{DEATHS}"
+      - "&e🕒 &fPlaytime: &e{PLAYTIME}"
+      - "&bᯤ &fPing &b{PING}ms"
+      - ""
+      - "&e➡ &6&l&nCLICK&r &6to Message!"
+
+# ========================================================
+# Arena Regeneration System
+# ========================================================
+arena-regen:
+  wand:
+    material: WOODEN_AXE
+    name: "&#00D3FF&lArena Selection Wand"
+    lore:
+      - "&7Left-Click: &bSet Position 1"
+      - "&7Right-Click: &bSet Position 2"
+      - "&8Use &e/arena regen create <name> &8to finish."
+
+  # Remove loose entities (dropped items, projectiles, mobs) inside the cuboid during regeneration
+  clear-entities: true
+
+  # Maximum allowed volume for an arena in blocks (0 for unlimited)
+  max-blocks: 1000000
+
+# ========================================================
+# Cosmetic Entitlements System (Chat Colors & Player Glow)
+# ========================================================
+cosmetics:
+  chat-color:
+    enabled: true
+    default-color: white
+    colors:
+      red:
+        display: "&cRed"
+        chat-code: "&c"
+      green:
+        display: "&aGreen"
+        chat-code: "&a"
+      blue:
+        display: "&9Blue"
+        chat-code: "&9"
+      yellow:
+        display: "&eYellow"
+        chat-code: "&e"
+      aqua:
+        display: "&bAqua"
+        chat-code: "&b"
+      white:
+        display: "&fWhite"
+        chat-code: "&f"
+      gray:
+        display: "&7Gray"
+        chat-code: "&7"
+      dark_red:
+        display: "&4Dark Red"
+        chat-code: "&4"
+      dark_green:
+        display: "&2Dark Green"
+        chat-code: "&2"
+      dark_blue:
+        display: "&1Dark Blue"
+        chat-code: "&1"
+      gold:
+        display: "&6Gold"
+        chat-code: "&6"
+      light_purple:
+        display: "&dLight Purple"
+        chat-code: "&d"
+      dark_purple:
+        display: "&5Dark Purple"
+        chat-code: "&5"
+
+  player-glow:
+    enabled: true
+    colors:
+      - red
+      - green
+      - blue
+      - yellow
+      - aqua
+      - white
+      - gray
+      - dark_red
+      - dark_green
+      - dark_blue
+      - gold
+      - light_purple
+      - dark_purple
+
+# BuiltByBit Update Notifier Settings
+update-checker:
+  enabled: true
+  interval-seconds: 60
+  notify-console: true
+  notify-admins: true
+  first-check-save-baseline: true
+  timeout-seconds: 10
+

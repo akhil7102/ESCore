@@ -1,0 +1,149 @@
+name: ESCore
+version: v1.0
+main: fun.endcore.escoins.ESCore
+api-version: '1.21'
+author: AKHILPLAYZYT
+description: Core server management system with premium coins, entity cleanup, and spawn management.
+softdepend: [PlaceholderAPI]
+
+commands:
+  escore:
+    description: Core administrative command
+    aliases: [escoins, core]
+    permission: escoins.admin
+    usage: /escore [reload|version|help]
+  coins:
+    description: Manage and view premium coin balance
+    aliases: [coin]
+    permission: escoins.balance
+    usage: /coins [balance|pay|top|give|take|set|reload]
+  clearlag:
+    description: Control and monitor server entity cleanup
+    aliases: [clearentities]
+    permission: escoins.clearlag
+    usage: /clearlag [clear|status|reload]
+  spawn:
+    description: Teleport to the server spawn location
+    permission: escoins.spawn
+    usage: /spawn
+  setspawn:
+    description: Set the server spawn location
+    permission: escoins.setspawn
+    usage: /setspawn
+  arena:
+    description: Arena regeneration system
+    permission: escoins.arena.admin
+    usage: /arena regen [wand|create|save|regenerate|list|delete]
+  cc:
+    description: Shortcut for ESCore chat color cosmetic management
+    aliases: [chatcolor]
+    permission: escore.cosmetics.admin
+    usage: /cc [give|remove]
+  tags:
+    description: Select and manage player chat tags
+    aliases: [tag]
+    permission: escore.tags
+    usage: /tags [list|select|remove]
+
+permissions:
+  escoins.spawn:
+    description: Allows teleporting to the server spawn
+    default: true
+  escoins.setspawn:
+    description: Allows setting the server spawn location
+    default: op
+  escoins.balance:
+    description: Allows players to check their own coin balance
+    default: true
+  escoins.balance.others:
+    description: Allows viewing other players' coin balances
+    default: op
+  escoins.pay:
+    description: Allows players to transfer coins to other players
+    default: true
+  escoins.top:
+    description: Allows viewing the top coin leaderboard
+    default: true
+  escoins.admin:
+    description: Provides administrative access to all core commands
+    default: op
+    children:
+      escoins.give: true
+      escoins.take: true
+      escoins.set: true
+      escoins.reload: true
+      escoins.setspawn: true
+      escoins.balance.others: true
+      escoins.clearlag: true
+      escoins.arena.admin: true
+      escore.cosmetics.admin: true
+      escore.tags.admin: true
+      escore.update.admin: true
+  escore.cosmetics.admin:
+    description: Allows administrative access to cosmetic entitlements (chat colors & player glow)
+    default: op
+  escoins.arena.admin:
+    description: Allows administrative access to arena regeneration system
+    default: op
+  escoins.give:
+    description: Allows giving coins to players
+    default: op
+  escoins.take:
+    description: Allows deducting coins from players
+    default: op
+  escoins.set:
+    description: Allows setting a player's coin balance
+    default: op
+  escoins.clearlag:
+    description: Allows managing and manually running ClearLag
+    default: op
+  escoins.reload:
+    description: Allows reloading configuration files
+    default: op
+  escoins.chat.color:
+    description: Allows using color codes in chat messages
+    default: op
+  escore.tags:
+    description: Allows using player tag commands
+    default: true
+    children:
+      escore.tags.list: true
+      escore.tags.select: true
+      escore.tags.remove: true
+  escore.tags.list:
+    description: Allows listing owned tags
+    default: true
+  escore.tags.select:
+    description: Allows selecting an active tag
+    default: true
+  escore.tags.remove:
+    description: Allows removing the active tag
+    default: true
+  escore.tags.admin:
+    description: Provides administrative access to manage player tags
+    default: op
+    children:
+      escore.tags.give: true
+      escore.tags.remove.others: true
+      escore.tags.clear: true
+  escore.tags.give:
+    description: Allows granting tags to players
+    default: op
+  escore.tags.remove.others:
+    description: Allows removing tags from players
+    default: op
+  escore.tags.clear:
+    description: Allows clearing all tags from players
+    default: op
+  escore.update.notify:
+    description: Allows receiving BuiltByBit update notifications
+    default: op
+  escore.update.check:
+    description: Allows forcing an immediate BuiltByBit update check
+    default: op
+  escore.update.admin:
+    description: Full administrative access to BuiltByBit update checker
+    default: op
+    children:
+      escore.update.notify: true
+      escore.update.check: true

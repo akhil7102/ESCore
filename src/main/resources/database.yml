@@ -1,0 +1,23 @@
+# ========================================================
+#            ESCoins - Database Configuration
+# ========================================================
+
+database:
+  # Database type to use.
+  # Supported types: SQLITE, MYSQL, MARIADB
+  type: SQLITE
+
+  # SQLite Configuration
+  sqlite:
+    file: coins.db
+
+  # MySQL / MariaDB Configuration
+  mysql:
+    host: localhost
+    port: 3306
+    database: escoins
+    username: root
+    password: ""
+    pool-size: 5
+    connection-timeout: 30000
+    max-lifetime: 1800000

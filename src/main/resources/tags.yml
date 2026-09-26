@@ -1,0 +1,30 @@
+# ========================================================
+# ESCore — Player Tags Configuration
+# ========================================================
+# Administrators can add, remove, or edit tags here.
+# Changes take effect with /escore reload.
+#
+# Each tag key is the uppercase identifier used in commands (e.g. /tags select WARLORD).
+# 'display' is the formatted tag shown after the player's username in chat.
+
+tags:
+  WARLORD:
+    display: "&c[WARLORD]"
+  SLAYER:
+    display: "&4[SLAYER]"
+  GLADIATOR:
+    display: "&6[GLADIATOR]"
+  VOIDWALKER:
+    display: "&5[VOIDWALKER]"
+  NEMESIS:
+    display: "&8[NEMESIS]"
+  PHANTOM:
+    display: "&7[PHANTOM]"
+  TYCOON:
+    display: "&e[TYCOON]"
+  OVERLORD:
+    display: "&d[OVERLORD]"
+  TIMELESS:
+    display: "&b[TIMELESS]"
+  UNSTOPPABLE:
+    display: "&a[UNSTOPPABLE]"
