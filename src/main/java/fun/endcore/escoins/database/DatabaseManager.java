@@ -63,6 +63,11 @@ public abstract class DatabaseManager {
 
             // Create cosmetics table
             stmt.executeUpdate(getCreateCosmeticsTableSql());
+            try {
+                stmt.executeUpdate("ALTER TABLE escore_player_cosmetics ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1;");
+            } catch (SQLException ignored) {
+                // Column already exists
+            }
 
             // Create indices
             stmt.executeUpdate("CREATE INDEX IF NOT EXISTS idx_escoins_players_balance ON escoins_players(balance DESC);");
@@ -482,7 +487,7 @@ public abstract class DatabaseManager {
      */
     public List<CosmeticEntry> loadCosmetics(UUID uuid) {
         List<CosmeticEntry> list = new ArrayList<>();
-        String sql = "SELECT cosmetic_type, color, ownership_type, expires_at, created_at FROM escore_player_cosmetics WHERE uuid = ?;";
+        String sql = "SELECT cosmetic_type, color, ownership_type, expires_at, is_active, created_at FROM escore_player_cosmetics WHERE uuid = ?;";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid.toString());
@@ -500,10 +505,20 @@ public abstract class DatabaseManager {
                     long expiresAtLong = rs.getLong("expires_at");
                     Long expiresAt = rs.wasNull() ? null : expiresAtLong;
 
+                    boolean active = true;
+                    try {
+                        active = rs.getBoolean("is_active");
+                        if (rs.wasNull()) {
+                            active = true;
+                        }
+                    } catch (SQLException ignored) {
+                        active = true;
+                    }
+
                     Timestamp createdTs = rs.getTimestamp("created_at");
                     long createdAt = createdTs != null ? createdTs.getTime() : System.currentTimeMillis();
 
-                    list.add(new CosmeticEntry(uuid, type, color, ownType, expiresAt, createdAt));
+                    list.add(new CosmeticEntry(uuid, type, color, ownType, expiresAt, active, createdAt));
                 }
             }
         } catch (SQLException e) {
@@ -530,11 +545,31 @@ public abstract class DatabaseManager {
             } else {
                 ps.setNull(5, Types.BIGINT);
             }
+            ps.setBoolean(6, entry.active());
             ps.executeUpdate();
             return true;
         } catch (SQLException e) {
             if (plugin != null) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to save cosmetic for " + entry.playerUuid(), e);
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Updates the active toggle state of a cosmetic entitlement.
+     */
+    public boolean updateCosmeticActive(UUID uuid, CosmeticType type, boolean active) {
+        String sql = "UPDATE escore_player_cosmetics SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ? AND cosmetic_type = ?;";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, active);
+            ps.setString(2, uuid.toString());
+            ps.setString(3, type.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            if (plugin != null) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to update cosmetic active state for " + uuid, e);
             }
             return false;
         }

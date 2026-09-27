@@ -134,8 +134,17 @@ public class CosmeticManager {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     if (!player.isOnline()) return;
 
-                    if (glow != null && !glow.isExpired() && playerGlowEnabled) {
+                    if (glow != null && !glow.isExpired() && glow.active() && playerGlowEnabled) {
                         applyPlayerGlow(player, glow.color());
+
+                        // Schedule a 10-tick retry to guarantee TAB has loaded the TabPlayer and finished its own join setup
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            if (player.isOnline() && isCosmeticActive(player.getUniqueId(), CosmeticType.PLAYER_GLOW)) {
+                                getActiveCosmetic(player.getUniqueId(), CosmeticType.PLAYER_GLOW).ifPresent(entry -> {
+                                    applyPlayerGlow(player, entry.color());
+                                });
+                            }
+                        }, 10L);
                     }
 
                     // Synchronize any other currently glowing online players into this player's scoreboard
@@ -168,6 +177,14 @@ public class CosmeticManager {
         Optional<CosmeticEntry> glow = getActiveCosmetic(player.getUniqueId(), CosmeticType.PLAYER_GLOW);
         if (glow.isPresent() && !glow.get().isExpired() && playerGlowEnabled) {
             applyPlayerGlow(player, glow.get().color());
+
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline() && isCosmeticActive(player.getUniqueId(), CosmeticType.PLAYER_GLOW)) {
+                    getActiveCosmetic(player.getUniqueId(), CosmeticType.PLAYER_GLOW).ifPresent(entry -> {
+                        applyPlayerGlow(player, entry.color());
+                    });
+                }
+            }, 5L);
         }
 
         // Sync other glowing players into this player's scoreboard in the new world
@@ -245,6 +262,9 @@ public class CosmeticManager {
             syncPlayerGlowToScoreboard(player, cosmeticColor, sb);
         }
 
+        // Apply external nametag hooks (TAB by NEZNAMY, NametagEdit)
+        TabHook.applyGlow(player, cosmeticColor);
+
         // Set glowing
         player.setGlowing(true);
 
@@ -263,6 +283,9 @@ public class CosmeticManager {
         for (Scoreboard sb : scoreboards) {
             removePlayerFromGlowTeams(player, sb);
         }
+
+        // Reset external nametag hooks (TAB by NEZNAMY, NametagEdit)
+        TabHook.removeGlow(player);
 
         if (player.isOnline()) {
             player.setGlowing(false);
@@ -341,7 +364,10 @@ public class CosmeticManager {
     // Cosmetic Query Methods
     // ========================================================
 
-    public Optional<CosmeticEntry> getActiveCosmetic(UUID uuid, CosmeticType type) {
+    /**
+     * Gets a player's cosmetic entitlement record (whether enabled or disabled, but not expired).
+     */
+    public Optional<CosmeticEntry> getCosmetic(UUID uuid, CosmeticType type) {
         Map<CosmeticType, CosmeticEntry> map = activeCosmetics.get(uuid);
         if (map != null) {
             CosmeticEntry entry = map.get(type);
@@ -369,8 +395,59 @@ public class CosmeticManager {
         return Optional.empty();
     }
 
+    /**
+     * Gets a player's active cosmetic entry if active (enabled) and not expired.
+     */
+    public Optional<CosmeticEntry> getActiveCosmetic(UUID uuid, CosmeticType type) {
+        return getCosmetic(uuid, type).filter(CosmeticEntry::active);
+    }
+
+    /**
+     * Checks if a player has unlocked/owns this cosmetic entitlement (not expired, regardless of toggle status).
+     */
     public boolean hasCosmetic(UUID uuid, CosmeticType type) {
+        return getCosmetic(uuid, type).isPresent();
+    }
+
+    /**
+     * Checks if a player's cosmetic entitlement is currently enabled and active.
+     */
+    public boolean isCosmeticActive(UUID uuid, CosmeticType type) {
         return getActiveCosmetic(uuid, type).isPresent();
+    }
+
+    /**
+     * Toggles a player's cosmetic perk active status (on or off).
+     * Updates in-memory state, scoreboards/glow if applicable, and persists to database asynchronously.
+     */
+    public CompletableFuture<Boolean> setCosmeticActive(UUID uuid, CosmeticType type, boolean active) {
+        Optional<CosmeticEntry> opt = getCosmetic(uuid, type);
+        if (opt.isEmpty()) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        CosmeticEntry current = opt.get();
+        CosmeticEntry updated = current.withActive(active);
+
+        // Update in-memory cache
+        activeCosmetics.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(type, updated);
+
+        // If player glow, update glow and scoreboard teams immediately on main thread
+        Player player = Bukkit.getPlayer(uuid);
+        if (player != null && player.isOnline() && type == CosmeticType.PLAYER_GLOW) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (active && playerGlowEnabled) {
+                    applyPlayerGlow(player, updated.color());
+                } else {
+                    removePlayerGlow(player);
+                }
+            });
+        }
+
+        // Persist active state to database asynchronously
+        return CompletableFuture.supplyAsync(() ->
+                plugin.getDatabaseManager().updateCosmeticActive(uuid, type, active)
+        );
     }
 
     public CosmeticColor getChatColor(String name) {

@@ -239,11 +239,39 @@ public interface ESCoinsAPI {
     java.util.Optional<fun.endcore.escoins.cosmetics.CosmeticEntry> getActiveCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
 
     /**
-     * Checks if a player has an active cosmetic perk.
+     * Gets a player's cosmetic entitlement record (whether active or toggled off, but not expired).
      *
      * @param uuid the player's unique identifier
      * @param type the cosmetic type
-     * @return true if player has an active perk
+     * @return Optional containing the cosmetic entry, or empty
+     */
+    java.util.Optional<fun.endcore.escoins.cosmetics.CosmeticEntry> getCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    /**
+     * Checks if a player has unlocked/owns this cosmetic perk (regardless of toggle state).
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @return true if player owns this cosmetic
      */
     boolean hasCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    /**
+     * Checks if a player's cosmetic perk is currently active and enabled.
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @return true if player owns this cosmetic and it is currently enabled
+     */
+    boolean isCosmeticActive(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type);
+
+    /**
+     * Sets or toggles a player's cosmetic active status (on or off).
+     *
+     * @param uuid the player's unique identifier
+     * @param type the cosmetic type
+     * @param active true to enable, false to disable
+     * @return a CompletableFuture yielding true if successful, false if player does not have the cosmetic
+     */
+    CompletableFuture<Boolean> setCosmeticActive(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type, boolean active);
 }

@@ -148,6 +148,7 @@ public class MySQLDatabase extends DatabaseManager {
                "color VARCHAR(32) NOT NULL, " +
                "ownership_type VARCHAR(16) NOT NULL, " +
                "expires_at BIGINT, " +
+               "is_active BOOLEAN NOT NULL DEFAULT 1, " +
                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
                "PRIMARY KEY (uuid, cosmetic_type)" +
@@ -156,12 +157,13 @@ public class MySQLDatabase extends DatabaseManager {
 
     @Override
     protected String getUpsertCosmeticSql() {
-        return "INSERT INTO escore_player_cosmetics (uuid, cosmetic_type, color, ownership_type, expires_at, updated_at) " +
-               "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) " +
+        return "INSERT INTO escore_player_cosmetics (uuid, cosmetic_type, color, ownership_type, expires_at, is_active, updated_at) " +
+               "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) " +
                "ON DUPLICATE KEY UPDATE " +
                "color = VALUES(color), " +
                "ownership_type = VALUES(ownership_type), " +
                "expires_at = VALUES(expires_at), " +
+               "is_active = VALUES(is_active), " +
                "updated_at = CURRENT_TIMESTAMP;";
     }
 }

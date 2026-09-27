@@ -124,6 +124,7 @@ class DatabaseManagerTest {
                        "color VARCHAR(32) NOT NULL, " +
                        "ownership_type VARCHAR(16) NOT NULL, " +
                        "expires_at BIGINT, " +
+                       "is_active BOOLEAN NOT NULL DEFAULT 1, " +
                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                        "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                        "PRIMARY KEY (uuid, cosmetic_type)" +
@@ -132,12 +133,13 @@ class DatabaseManagerTest {
 
             @Override
             protected String getUpsertCosmeticSql() {
-                return "INSERT INTO escore_player_cosmetics (uuid, cosmetic_type, color, ownership_type, expires_at, updated_at) " +
-                       "VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) " +
+                return "INSERT INTO escore_player_cosmetics (uuid, cosmetic_type, color, ownership_type, expires_at, is_active, updated_at) " +
+                       "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) " +
                        "ON CONFLICT(uuid, cosmetic_type) DO UPDATE SET " +
                        "color = excluded.color, " +
                        "ownership_type = excluded.ownership_type, " +
                        "expires_at = excluded.expires_at, " +
+                       "is_active = excluded.is_active, " +
                        "updated_at = CURRENT_TIMESTAMP;";
             }
         };
@@ -343,6 +345,8 @@ class DatabaseManagerTest {
         assertEquals(fun.endcore.escoins.cosmetics.OwnershipType.PERMANENT, loadedChat.ownershipType());
         assertNull(loadedChat.expiresAt());
         assertFalse(loadedChat.isExpired());
+        assertTrue(loadedChat.active());
+        assertTrue(loadedChat.isActive());
 
         fun.endcore.escoins.cosmetics.CosmeticEntry loadedGlow = list.stream()
                 .filter(e -> e.type() == fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
@@ -351,6 +355,19 @@ class DatabaseManagerTest {
         assertEquals(fun.endcore.escoins.cosmetics.OwnershipType.TEMPORARY, loadedGlow.ownershipType());
         assertNotNull(loadedGlow.expiresAt());
         assertFalse(loadedGlow.isExpired());
+        assertTrue(loadedGlow.active());
+        assertTrue(loadedGlow.isActive());
+
+        // Test toggle active state to false
+        assertTrue(dbManager.updateCosmeticActive(uuid, fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW, false));
+        List<fun.endcore.escoins.cosmetics.CosmeticEntry> listToggled = dbManager.loadCosmetics(uuid);
+        fun.endcore.escoins.cosmetics.CosmeticEntry toggledGlow = listToggled.stream()
+                .filter(e -> e.type() == fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
+                .findFirst().orElseThrow();
+        assertFalse(toggledGlow.active());
+        assertFalse(toggledGlow.isActive());
+        // Toggle back to true
+        assertTrue(dbManager.updateCosmeticActive(uuid, fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW, true));
 
         // 4. Update permanent chat color to red
         fun.endcore.escoins.cosmetics.CosmeticEntry updatedChat = new fun.endcore.escoins.cosmetics.CosmeticEntry(

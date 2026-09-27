@@ -145,8 +145,28 @@ public class ESCoinsAPIImpl implements ESCoinsAPI {
     }
 
     @Override
+    public java.util.Optional<fun.endcore.escoins.cosmetics.CosmeticEntry> getCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type) {
+        fun.endcore.escoins.cosmetics.CosmeticManager cm = fun.endcore.escoins.ESCoins.getInstance().getCosmeticManager();
+        if (cm == null) return java.util.Optional.empty();
+        return cm.getCosmetic(uuid, type);
+    }
+
+    @Override
     public boolean hasCosmetic(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type) {
         fun.endcore.escoins.cosmetics.CosmeticManager cm = fun.endcore.escoins.ESCoins.getInstance().getCosmeticManager();
         return cm != null && cm.hasCosmetic(uuid, type);
+    }
+
+    @Override
+    public boolean isCosmeticActive(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type) {
+        fun.endcore.escoins.cosmetics.CosmeticManager cm = fun.endcore.escoins.ESCoins.getInstance().getCosmeticManager();
+        return cm != null && cm.isCosmeticActive(uuid, type);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> setCosmeticActive(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type, boolean active) {
+        fun.endcore.escoins.cosmetics.CosmeticManager cm = fun.endcore.escoins.ESCoins.getInstance().getCosmeticManager();
+        if (cm == null) return CompletableFuture.completedFuture(false);
+        return cm.setCosmeticActive(uuid, type, active);
     }
 }

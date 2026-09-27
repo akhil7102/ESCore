@@ -11,10 +11,15 @@ public record CosmeticEntry(
         String color,
         OwnershipType ownershipType,
         Long expiresAt,
+        boolean active,
         long createdAt
 ) {
     public CosmeticEntry(UUID playerUuid, CosmeticType type, String color, OwnershipType ownershipType, Long expiresAt) {
-        this(playerUuid, type, color, ownershipType, expiresAt, System.currentTimeMillis());
+        this(playerUuid, type, color, ownershipType, expiresAt, true, System.currentTimeMillis());
+    }
+
+    public CosmeticEntry(UUID playerUuid, CosmeticType type, String color, OwnershipType ownershipType, Long expiresAt, long createdAt) {
+        this(playerUuid, type, color, ownershipType, expiresAt, true, createdAt);
     }
 
     /**
@@ -25,6 +30,20 @@ public record CosmeticEntry(
             return false;
         }
         return System.currentTimeMillis() >= expiresAt;
+    }
+
+    /**
+     * Checks if this cosmetic is currently active (enabled by the player and not expired).
+     */
+    public boolean isActive() {
+        return active && !isExpired();
+    }
+
+    /**
+     * Returns a copy of this entry with the specified active status.
+     */
+    public CosmeticEntry withActive(boolean newActive) {
+        return new CosmeticEntry(playerUuid, type, color, ownershipType, expiresAt, newActive, createdAt);
     }
 
     /**

@@ -155,6 +155,81 @@ public class ESCoreCoinsExpansion extends PlaceholderExpansion {
                     .orElse("None");
         }
 
+        // %escore_chatcolor_status% / %escore_chatcolor_enabled%
+        if (lower.equals("chatcolor_status") || lower.equals("chat_color_status")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "None";
+            return plugin.getCosmeticManager().getCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.CHAT_COLOR)
+                    .map(e -> e.active() ? "Enabled" : "Disabled")
+                    .orElse("None");
+        }
+        if (lower.equals("chatcolor_enabled") || lower.equals("chat_color_enabled")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "false";
+            return String.valueOf(plugin.getCosmeticManager().isCosmeticActive(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.CHAT_COLOR));
+        }
+
+        // %escore_chatcolor_code% / %escore_chatcolor_code_raw%
+        if (lower.equals("chatcolor_code") || lower.equals("chat_color_code")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.CHAT_COLOR)
+                    .map(entry -> {
+                        fun.endcore.escoins.cosmetics.CosmeticColor cc = plugin.getCosmeticManager().getChatColor(entry.color());
+                        return cc != null ? cc.chatCode() : "";
+                    })
+                    .orElse("");
+        }
+        if (lower.equals("chatcolor_code_raw") || lower.equals("chat_color_code_raw")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.CHAT_COLOR)
+                    .map(entry -> {
+                        fun.endcore.escoins.cosmetics.CosmeticColor cc = plugin.getCosmeticManager().getChatColor(entry.color());
+                        return cc != null ? cc.chatCode().replace('&', '§') : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_playerglow_status% / %escore_glow_status% / %escore_glow_enabled%
+        if (lower.equals("playerglow_status") || lower.equals("player_glow_status") || lower.equals("glow_status")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "None";
+            return plugin.getCosmeticManager().getCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
+                    .map(e -> e.active() ? "Enabled" : "Disabled")
+                    .orElse("None");
+        }
+        if (lower.equals("playerglow_enabled") || lower.equals("player_glow_enabled") || lower.equals("glow_enabled")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "false";
+            return String.valueOf(plugin.getCosmeticManager().isCosmeticActive(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW));
+        }
+
+        // %escore_glow_code% / %escore_playerglow_code% / %escore_glowcolor_code%
+        // Specifically used by TAB (groups.yml tagprefix: '%luckperms-prefix%%escore_glow_code%')
+        if (lower.equals("glow_code") || lower.equals("playerglow_code") || lower.equals("player_glow_code") || lower.equals("glowcolor_code") || lower.equals("glow_color_code")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
+                    .map(entry -> {
+                        fun.endcore.escoins.cosmetics.CosmeticColor cc = plugin.getCosmeticManager().getGlowColor(entry.color());
+                        return cc != null ? cc.chatCode() : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_glow_code_raw% / %escore_playerglow_code_raw% (with § section sign)
+        if (lower.equals("glow_code_raw") || lower.equals("playerglow_code_raw") || lower.equals("player_glow_code_raw")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
+                    .map(entry -> {
+                        fun.endcore.escoins.cosmetics.CosmeticColor cc = plugin.getCosmeticManager().getGlowColor(entry.color());
+                        return cc != null ? cc.chatCode().replace('&', '§') : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_glow_color% / %escore_playerglow_color%
+        if (lower.equals("glow_color") || lower.equals("playerglow_color") || lower.equals("player_glow_color")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "none";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.PLAYER_GLOW)
+                    .map(fun.endcore.escoins.cosmetics.CosmeticEntry::color)
+                    .orElse("none");
+        }
+
         return null;
     }
 }

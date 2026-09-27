@@ -35,10 +35,13 @@ commands:
     permission: escoins.arena.admin
     usage: /arena regen [wand|create|save|regenerate|list|delete]
   cc:
-    description: Shortcut for ESCore chat color cosmetic management
+    description: Toggle or manage your chat color cosmetic
     aliases: [chatcolor]
-    permission: escore.cosmetics.admin
-    usage: /cc [give|remove]
+    usage: /chatcolor [on|off]
+  glow:
+    description: Toggle your player glow cosmetic on or off
+    aliases: [playerglow]
+    usage: /glow [on|off]
 
 permissions:
   escoins.spawn:
@@ -73,9 +76,17 @@ permissions:
       escoins.arena.admin: true
       escore.cosmetics.admin: true
       escore.update.admin: true
+      escore.glow.toggle: true
+      escore.chatcolor.toggle: true
   escore.cosmetics.admin:
     description: Allows administrative access to cosmetic entitlements (chat colors & player glow)
     default: op
+  escore.glow.toggle:
+    description: Allows toggling player glow on and off
+    default: true
+  escore.chatcolor.toggle:
+    description: Allows toggling chat color on and off
+    default: true
   escoins.arena.admin:
     description: Allows administrative access to arena regeneration system
     default: op

@@ -70,6 +70,8 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
             mm.sendMessage(sender, "core.cmd-remove", "&e/escore remove <player> <glow|chatcolor>");
             mm.sendMessage(sender, "core.cmd-update", "&e/escore update <check|status> &7- BuiltByBit update checker");
         }
+        mm.sendMessage(sender, "core.cmd-glow", "&e/glow <on|off> &7- Toggle player glow");
+        mm.sendMessage(sender, "core.cmd-chatcolor", "&e/chatcolor <on|off> &7- Toggle chat color");
         mm.sendMessage(sender, "core.cmd-cc", "&e/cc &7- Chat color cosmetic shortcuts");
         mm.sendMessage(sender, "core.cmd-coins", "&e/coins &7- Manage and view premium coins");
         mm.sendMessage(sender, "core.cmd-clearlag", "&e/clearlag &7- Manage entity cleanup system");

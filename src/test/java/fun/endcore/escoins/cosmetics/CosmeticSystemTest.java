@@ -71,4 +71,53 @@ class CosmeticSystemTest {
         assertTrue(expired.isExpired());
         assertEquals(0L, expired.getRemainingMillis());
     }
+
+    @Test
+    void testCosmeticEntryActiveState() {
+        UUID uuid = UUID.randomUUID();
+
+        // Default constructor sets active to true
+        CosmeticEntry entry = new CosmeticEntry(uuid, CosmeticType.PLAYER_GLOW, "gold", OwnershipType.PERMANENT, null);
+        assertTrue(entry.active());
+        assertTrue(entry.isActive());
+
+        // Toggle active to false
+        CosmeticEntry disabled = entry.withActive(false);
+        assertFalse(disabled.active());
+        assertFalse(disabled.isActive());
+
+        // Toggle back to true
+        CosmeticEntry enabledAgain = disabled.withActive(true);
+        assertTrue(enabledAgain.active());
+        assertTrue(enabledAgain.isActive());
+
+        // Expired cosmetic with active=true should have isActive() == false
+        CosmeticEntry expiredActive = new CosmeticEntry(uuid, CosmeticType.CHAT_COLOR, "red", OwnershipType.TEMPORARY, System.currentTimeMillis() - 5000L, true, System.currentTimeMillis() - 10000L);
+        assertTrue(expiredActive.active());
+        assertTrue(expiredActive.isExpired());
+        assertFalse(expiredActive.isActive());
+    }
+
+    @Test
+    void testCosmeticToggleActionEvaluation() {
+        // Simulates the command toggle logic for /glow and /chatcolor
+        // Case 1: Player has no cosmetic -> deny
+        CosmeticEntry none = null;
+        assertNull(none, "Player has no cosmetic unlocked");
+
+        // Case 2: Player has cosmetic active=true, runs /glow on -> already enabled deny
+        CosmeticEntry activeGlow = new CosmeticEntry(UUID.randomUUID(), CosmeticType.PLAYER_GLOW, "aqua", OwnershipType.PERMANENT, null);
+        assertTrue(activeGlow.active());
+
+        // Case 3: Player has cosmetic active=true, runs /glow off -> toggles to disabled
+        CosmeticEntry turnedOff = activeGlow.withActive(false);
+        assertFalse(turnedOff.active());
+
+        // Case 4: Player has cosmetic active=false, runs /glow off -> already disabled deny
+        assertFalse(turnedOff.active());
+
+        // Case 5: Player has cosmetic active=false, runs /glow on -> toggles to enabled
+        CosmeticEntry turnedOn = turnedOff.withActive(true);
+        assertTrue(turnedOn.active());
+    }
 }

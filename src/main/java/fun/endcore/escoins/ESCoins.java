@@ -214,6 +214,15 @@ public class ESCoins extends JavaPlugin {
             cc.setTabCompleter(ccCommand);
         }
 
+        // /glow (player glow toggle command)
+        fun.endcore.escoins.cosmetics.GlowCommand glowCommand =
+                new fun.endcore.escoins.cosmetics.GlowCommand(this, escoreCommand.getCosmeticHandler());
+        PluginCommand glow = getCommand("glow");
+        if (glow != null) {
+            glow.setExecutor(glowCommand);
+            glow.setTabCompleter(glowCommand);
+        }
+
         // /coins
         CoinsCommand coinsCommand = new CoinsCommand(this);
         PluginCommand coins = getCommand("coins");
