@@ -34,6 +34,11 @@ public class ClearLagCommand implements CommandExecutor, TabCompleter {
         }
 
         ClearLagManager clm = plugin.getClearLagManager();
+        if (clm == null || !clm.isEnabled()) {
+            mm.sendMessage(sender, "clearlag.disabled", "{PREFIX}&cESCore ClearLag system is currently disabled in config.yml.");
+            return true;
+        }
+
         if (args.length == 0) {
             handleStatus(sender, clm);
             return true;
@@ -85,7 +90,8 @@ public class ClearLagCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!sender.hasPermission("escoins.clearlag")) {
+        ClearLagManager clm = plugin.getClearLagManager();
+        if (clm == null || !clm.isEnabled() || !sender.hasPermission("escoins.clearlag")) {
             return List.of();
         }
 

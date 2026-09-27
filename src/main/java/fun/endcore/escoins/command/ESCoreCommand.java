@@ -63,7 +63,10 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         mm.sendMessage(sender, "core.header", "&8&m----------------&r &b&lESCore &8&m----------------");
         mm.sendMessage(sender, "core.version", "&7Version: &ev1.0");
         mm.sendMessage(sender, "core.author", "&7Author: &eAKHILPLAYZYT");
-        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| &fClearLag &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags");
+        fun.endcore.escoins.clearlag.ClearLagManager clm = plugin.getClearLagManager();
+        boolean clmEnabled = clm != null && clm.isEnabled();
+        String clmFeature = clmEnabled ? "&fClearLag" : "&7ClearLag (Disabled)";
+        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| " + clmFeature + " &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags");
         if (sender.hasPermission("escoins.admin") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-reload", "&e/escore reload &7- Reload all configurations");
             mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <glow|chatcolor|tag> <value> <perm|temp [duration]>");
@@ -75,7 +78,9 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         mm.sendMessage(sender, "core.cmd-tag", "&e/tag <on|off|toggle|list|set> &7- Toggle and select player tags");
         mm.sendMessage(sender, "core.cmd-cc", "&e/cc &7- Chat color cosmetic shortcuts");
         mm.sendMessage(sender, "core.cmd-coins", "&e/coins &7- Manage and view premium coins");
-        mm.sendMessage(sender, "core.cmd-clearlag", "&e/clearlag &7- Manage entity cleanup system");
+        if (clmEnabled) {
+            mm.sendMessage(sender, "core.cmd-clearlag", "&e/clearlag &7- Manage entity cleanup system");
+        }
         mm.sendMessage(sender, "core.cmd-spawn", "&e/spawn &7- Teleport to server spawn");
         if (sender.hasPermission("escoins.setspawn") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-setspawn", "&e/setspawn &7- Set server spawn location");

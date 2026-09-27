@@ -34,8 +34,19 @@ first-join-message:
 death-messages:
   enabled: true
 
+# ========================================================
 # ClearLag System Settings
+# ========================================================
 clearlag:
+  # Master toggle for ESCore's built-in ClearLag system.
+  # Set to false to completely disable ESCore's ClearLag system so you can
+  # use ANY other clear lag plugin (e.g. ClearLag, LaggRemover, Carbon, etc.)
+  # without conflicts!
+  # When disabled:
+  #   - No background countdown timer runs
+  #   - No warning broadcasts, titles, actionbars, or sounds are sent
+  #   - /clearlag and /clearentities commands are unregistered from ESCore
+  #     so other plugins can use them freely without conflicts!
   enabled: true
 
   # Interval between automatic entity cleanups in seconds (600 = 10 minutes)
@@ -52,29 +63,42 @@ clearlag:
     - 2
     - 1
 
-  # Target worlds to clean up (leave empty to clean all loaded worlds)
-  worlds:
-    - world
-    - world_nether
-    - world_the_end
+  # Target worlds to clean up.
+  # Leave empty [] to automatically clean ALL loaded worlds on the server!
+  # Or specify specific worlds:
+  #   - world
+  #   - world_nether
+  #   - world_the_end
+  worlds: []
 
   # Worlds explicitly excluded from cleanup
   excluded-worlds: []
 
   # Entity categories to remove
   entities:
+    # Dropped items lying on the ground (diamonds, cobblestone, gear, etc.)
     dropped-items: true
+    # Hostile mobs (zombies, creepers, skeletons, spiders, phantoms, slimes, etc.)
     mobs: true
+    # Passive animals (cows, sheep, pigs, etc. Note: tamed pets & nametagged animals are protected)
     animals: false
+    # Projectiles (arrows, tridents, snowballs, etc.)
     projectiles: true
+    # Experience orbs on the ground
     xp-orbs: true
+    # Empty vehicles (boats, minecarts)
     vehicles: false
+    # Armor stands (holograms and named armor stands are always protected)
     armor-stands: false
 
   # Protection filters (never removed if true)
   protection:
+    # Protect living entities / mobs with a custom nametag (e.g. named pets, villager trade halls, iron farm zombies)
     named-entities: true
+    # Protect persistent living entities (e.g. tamed wolves/cats/horses, bred animals, leashed mobs, or mobs set to not despawn)
     persistent-entities: true
+    # Protect dropped items with custom display names (set to false so renamed dropped trash is cleared)
+    named-items: false
 
   # Optional ActionBar warning message
   actionbar:

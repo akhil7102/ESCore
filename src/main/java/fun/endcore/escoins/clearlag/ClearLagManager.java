@@ -38,6 +38,7 @@ public class ClearLagManager {
     // Protection toggles
     private boolean protectNamed = true;
     private boolean protectPersistent = true;
+    private boolean protectNamedItems = false;
 
     // ActionBar & Titles
     private boolean actionbarEnabled = false;
@@ -89,6 +90,7 @@ public class ClearLagManager {
 
         this.protectNamed = config.getBoolean("clearlag.protection.named-entities", true);
         this.protectPersistent = config.getBoolean("clearlag.protection.persistent-entities", true);
+        this.protectNamedItems = config.getBoolean("clearlag.protection.named-items", false);
 
         this.actionbarEnabled = config.getBoolean("clearlag.actionbar.enabled", false);
         this.actionbarContent = config.getString("clearlag.actionbar.content", "{PREFIX} &f» &fEntity removal in &e{0}&f!");
@@ -122,6 +124,13 @@ public class ClearLagManager {
         this.completeSoundPitch = (float) config.getDouble("clearlag.sound.complete-pitch", 2.0);
 
         restartTask();
+        plugin.updateClearLagCommand(this.enabled);
+
+        if (!this.enabled) {
+            plugin.getLogger().info("[ClearLag] ESCore ClearLag system is DISABLED in config.yml (external clear lag plugins can be used freely).");
+        } else {
+            plugin.getLogger().info("[ClearLag] ESCore ClearLag system is ENABLED. Interval: " + interval + "s.");
+        }
     }
 
     public void restartTask() {
@@ -201,6 +210,14 @@ public class ClearLagManager {
      * Scans entities ONLY during execution to ensure near-zero idle server impact.
      */
     public CleanupResult runCleanup(CommandSender initiator) {
+        if (!enabled) {
+            if (initiator != null) {
+                plugin.getMessageManager().sendMessage(initiator, "clearlag.disabled",
+                        "{PREFIX}&cESCore ClearLag system is currently disabled in config.yml.");
+            }
+            return CleanupResult.empty();
+        }
+
         long start = System.currentTimeMillis();
 
         int items = 0;
@@ -211,7 +228,7 @@ public class ClearLagManager {
         int armorStands = 0;
 
         List<World> worldsToScan = new ArrayList<>();
-        if (targetWorlds.isEmpty()) {
+        if (targetWorlds == null || targetWorlds.isEmpty()) {
             worldsToScan.addAll(Bukkit.getWorlds());
         } else {
             for (String worldName : targetWorlds) {
@@ -220,41 +237,69 @@ public class ClearLagManager {
                     worldsToScan.add(w);
                 }
             }
+            if (worldsToScan.isEmpty()) {
+                plugin.getLogger().warning("[ClearLag] None of the target worlds " + targetWorlds + " were found. Falling back to all loaded worlds.");
+                worldsToScan.addAll(Bukkit.getWorlds());
+            }
         }
 
         // Exclude worlds
-        if (!excludedWorlds.isEmpty()) {
+        if (excludedWorlds != null && !excludedWorlds.isEmpty()) {
             worldsToScan.removeIf(w -> excludedWorlds.contains(w.getName()));
         }
 
         for (World world : worldsToScan) {
             for (Entity entity : world.getEntities()) {
-                // Never remove players or NPCs
+                if (entity == null || !entity.isValid() || entity.isDead()) {
+                    continue;
+                }
+
+                // Never remove players or Citizens/plugin NPCs
                 if (entity instanceof Player || entity.hasMetadata("NPC")) {
                     continue;
                 }
 
-                // Check named entity protection
-                if (protectNamed) {
-                    if (entity.customName() != null || entity.getCustomName() != null) {
-                        continue;
+                // Living entity protections (nametagged, tamed, persistent mobs)
+                if (entity instanceof LivingEntity living) {
+                    // Check named entity protection (e.g. nametagged mobs, villagers, iron farm zombies)
+                    if (protectNamed) {
+                        if (living.customName() != null || living.getCustomName() != null) {
+                            continue;
+                        }
+                    }
+
+                    // Check persistent entity protection
+                    if (protectPersistent) {
+                        // Protect mobs with PersistenceRequired (nametagged, traded, bred, or picked up gear)
+                        if (living instanceof Mob mob && !mob.getRemoveWhenFarAway()) {
+                            continue;
+                        }
+                        // Protect tamed pets (wolves, cats, parrots, horses, etc.)
+                        if (living instanceof Tameable tameable && tameable.isTamed()) {
+                            continue;
+                        }
+                        // Protect leashed mobs/animals
+                        if (living.isLeashed()) {
+                            continue;
+                        }
                     }
                 }
 
-                // Check persistent entity protection
-                if (protectPersistent) {
-                    if (entity.isPersistent()) {
-                        continue;
-                    }
-                    if (entity instanceof Mob mob && !mob.getRemoveWhenFarAway()) {
-                        continue;
-                    }
+                // Never remove vehicles with passengers or passengers inside a vehicle
+                if (entity instanceof Vehicle vehicle && !vehicle.getPassengers().isEmpty()) {
+                    continue;
+                }
+                if (entity.isInsideVehicle()) {
+                    continue;
                 }
 
-                // Check category removal rules
-                if (entity instanceof Item) {
+                // Category removal rules
+                if (entity instanceof Item item) {
                     if (removeDroppedItems) {
-                        entity.remove();
+                        if (protectNamedItems && (item.customName() != null || item.getCustomName() != null)) {
+                            continue;
+                        }
+                        item.remove();
                         items++;
                     }
                 } else if (entity instanceof ExperienceOrb) {
@@ -268,6 +313,10 @@ public class ClearLagManager {
                         projectiles++;
                     }
                 } else if (entity instanceof Monster || entity instanceof Enemy || entity instanceof Ghast || entity instanceof Slime) {
+                    // Never remove boss entities (Ender Dragon, Wither, Elder Guardian, Warden)
+                    if (entity instanceof Boss || entity instanceof ComplexLivingEntity) {
+                        continue;
+                    }
                     if (removeMobs) {
                         entity.remove();
                         mobs++;
@@ -282,8 +331,12 @@ public class ClearLagManager {
                         entity.remove();
                         vehicles++;
                     }
-                } else if (entity instanceof ArmorStand) {
+                } else if (entity instanceof ArmorStand armorStand) {
                     if (removeArmorStands) {
+                        // Protect holograms (invisible or marker armor stands or named)
+                        if (armorStand.isMarker() || !armorStand.isVisible() || armorStand.customName() != null || armorStand.getCustomName() != null) {
+                            continue;
+                        }
                         entity.remove();
                         armorStands++;
                     }
@@ -294,6 +347,8 @@ public class ClearLagManager {
         int total = items + mobs + projectiles + xp + vehicles + armorStands;
         long duration = System.currentTimeMillis() - start;
         this.lastResult = new CleanupResult(total, items, mobs, projectiles, xp, duration);
+
+        plugin.getLogger().info("[ClearLag] Cleanup complete: Removed " + total + " entities (" + items + " items, " + mobs + " mobs, " + projectiles + " projectiles, " + xp + " xp) in " + worldsToScan.size() + " worlds (took " + duration + "ms).");
 
         // Broadcast completion message
         MessageManager mm = plugin.getMessageManager();
@@ -433,5 +488,17 @@ public class ClearLagManager {
 
     public boolean isRemoveXpOrbs() {
         return removeXpOrbs;
+    }
+
+    public boolean isProtectNamed() {
+        return protectNamed;
+    }
+
+    public boolean isProtectPersistent() {
+        return protectPersistent;
+    }
+
+    public boolean isProtectNamedItems() {
+        return protectNamedItems;
     }
 }

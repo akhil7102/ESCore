@@ -333,6 +333,73 @@ public class ESCoins extends JavaPlugin {
         getLogger().info("ESCore configuration reloaded.");
     }
 
+    /**
+     * Dynamically updates the registration of the /clearlag and /clearentities commands
+     * in Bukkit's CommandMap. When disabled, the commands are unregistered so external clear lag
+     * plugins can handle them without conflicts.
+     *
+     * @param enable true to register/enable ESCore's ClearLag commands, false to unregister/release them
+     */
+    public void updateClearLagCommand(boolean enable) {
+        try {
+            org.bukkit.command.CommandMap commandMap = Bukkit.getCommandMap();
+            java.util.Map<String, org.bukkit.command.Command> knownCommands = commandMap.getKnownCommands();
+            PluginCommand clearlagCmd = getCommand("clearlag");
+
+            String pluginPrefix = getDescription().getName().toLowerCase();
+
+            if (!enable) {
+                if (clearlagCmd != null) {
+                    clearlagCmd.unregister(commandMap);
+                }
+
+                // Look for alternative external clear lag command to restore
+                org.bukkit.command.Command fallbackCmd = null;
+                org.bukkit.command.Command fallbackAlias = null;
+                for (java.util.Map.Entry<String, org.bukkit.command.Command> entry : knownCommands.entrySet()) {
+                    String key = entry.getKey();
+                    org.bukkit.command.Command cmd = entry.getValue();
+                    if (cmd != clearlagCmd) {
+                        if (key.contains(":") && key.endsWith(":clearlag")) {
+                            fallbackCmd = cmd;
+                        }
+                        if (key.contains(":") && key.endsWith(":clearentities")) {
+                            fallbackAlias = cmd;
+                        }
+                    }
+                }
+
+                // Remove ESCore's entries
+                knownCommands.remove("clearlag");
+                knownCommands.remove("clearentities");
+                knownCommands.remove(pluginPrefix + ":clearlag");
+                knownCommands.remove(pluginPrefix + ":clearentities");
+
+                // If another plugin has /clearlag registered (e.g. clearlag:clearlag), restore primary mapping
+                if (fallbackCmd != null) {
+                    knownCommands.put("clearlag", fallbackCmd);
+                    getLogger().info("ClearLag disabled in config: re-routed /clearlag to external plugin (" + fallbackCmd.getName() + ").");
+                }
+                if (fallbackAlias != null) {
+                    knownCommands.put("clearentities", fallbackAlias);
+                }
+            } else {
+                if (clearlagCmd != null) {
+                    ClearLagCommand executor = new ClearLagCommand(this);
+                    clearlagCmd.setExecutor(executor);
+                    clearlagCmd.setTabCompleter(executor);
+                    knownCommands.put("clearlag", clearlagCmd);
+                    knownCommands.put("clearentities", clearlagCmd);
+                    knownCommands.put(pluginPrefix + ":clearlag", clearlagCmd);
+                    knownCommands.put(pluginPrefix + ":clearentities", clearlagCmd);
+                    clearlagCmd.register(commandMap);
+                }
+            }
+        } catch (Exception e) {
+            getLogger().log(Level.WARNING, "Failed to update ClearLag command registration in CommandMap", e);
+        }
+    }
+
     public static ESCoins getInstance() {
         return instance;
     }

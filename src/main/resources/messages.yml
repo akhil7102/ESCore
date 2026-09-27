@@ -114,6 +114,7 @@ clearlag:
   cleared-manual: "{CLEARLAG_PREFIX}&aManual cleanup complete: removed &e{TOTAL} &aentities."
   manual-start: "{CLEARLAG_PREFIX}&eExecuting entity cleanup..."
   reload: "{CLEARLAG_PREFIX}&aClearLag configuration reloaded."
+  disabled: "{CLEARLAG_PREFIX}&cESCore ClearLag system is currently disabled in config.yml."
 
   status:
     header: "&8---------------- &bClearLag Status &8----------------"
