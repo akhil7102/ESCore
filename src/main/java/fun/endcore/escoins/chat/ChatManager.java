@@ -98,10 +98,19 @@ public class ChatManager {
             }
         }
 
-        // 4. Separator
+        // 4. Player Tag (appears after username if active)
+        Component tagComp = Component.empty();
+        if (plugin.getTagManager() != null) {
+            String activeTagDisplay = plugin.getTagManager().getActiveTagDisplay(source.getUniqueId());
+            if (activeTagDisplay != null && !activeTagDisplay.isEmpty()) {
+                tagComp = Component.space().append(plugin.getMessageManager().parse(activeTagDisplay));
+            }
+        }
+
+        // 5. Separator
         Component separator = plugin.getMessageManager().parse(" &7▶ ");
 
-        // 5. Message text
+        // 6. Message text
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
         Component messageComp;
 
@@ -131,6 +140,7 @@ public class ChatManager {
 
         return Component.empty()
                 .append(nameTag)
+                .append(tagComp)
                 .append(separator)
                 .append(messageComp);
     }

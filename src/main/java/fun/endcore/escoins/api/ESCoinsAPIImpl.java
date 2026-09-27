@@ -169,4 +169,28 @@ public class ESCoinsAPIImpl implements ESCoinsAPI {
         if (cm == null) return CompletableFuture.completedFuture(false);
         return cm.setCosmeticActive(uuid, type, active);
     }
+
+    @Override
+    public String getActiveTag(UUID uuid) {
+        fun.endcore.escoins.tags.TagManager tm = fun.endcore.escoins.ESCoins.getInstance().getTagManager();
+        return tm != null ? tm.getActiveTag(uuid) : null;
+    }
+
+    @Override
+    public String getActiveTagDisplay(UUID uuid) {
+        fun.endcore.escoins.tags.TagManager tm = fun.endcore.escoins.ESCoins.getInstance().getTagManager();
+        return tm != null ? tm.getActiveTagDisplay(uuid) : "";
+    }
+
+    @Override
+    public fun.endcore.escoins.tags.TagDefinition getTag(String tagId) {
+        fun.endcore.escoins.tags.TagManager tm = fun.endcore.escoins.ESCoins.getInstance().getTagManager();
+        return tm != null ? tm.getTag(tagId) : null;
+    }
+
+    @Override
+    public java.util.Collection<fun.endcore.escoins.tags.TagDefinition> getAllTags() {
+        fun.endcore.escoins.tags.TagManager tm = fun.endcore.escoins.ESCoins.getInstance().getTagManager();
+        return tm != null ? tm.getAllTags() : java.util.Collections.emptyList();
+    }
 }

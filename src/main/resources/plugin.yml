@@ -42,8 +42,18 @@ commands:
     description: Toggle your player glow cosmetic on or off
     aliases: [playerglow]
     usage: /glow [on|off]
+  tag:
+    description: Toggle or manage your player tag cosmetic
+    aliases: [tags, playertag, playertags]
+    usage: /tag [on|off|toggle|list|set <tag>]
 
 permissions:
+  escore.tag.toggle:
+    description: Allows toggling player tag on and off
+    default: true
+  escore.tags.list:
+    description: Allows listing available player tags
+    default: true
   escoins.spawn:
     description: Allows teleporting to the server spawn
     default: true
@@ -78,8 +88,13 @@ permissions:
       escore.update.admin: true
       escore.glow.toggle: true
       escore.chatcolor.toggle: true
+      escore.tag.toggle: true
+      escore.tags.admin: true
   escore.cosmetics.admin:
-    description: Allows administrative access to cosmetic entitlements (chat colors & player glow)
+    description: Allows administrative access to cosmetic entitlements (chat colors, player glow & tags)
+    default: op
+  escore.tags.admin:
+    description: Allows administrative access to tag management
     default: op
   escore.glow.toggle:
     description: Allows toggling player glow on and off

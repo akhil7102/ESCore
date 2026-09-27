@@ -230,6 +230,74 @@ public class ESCoreCoinsExpansion extends PlaceholderExpansion {
                     .orElse("none");
         }
 
+        // ========================================================
+        // Player Tag Placeholders
+        // ========================================================
+
+        // %escore_tag% - formats the tag with full colors/hex. If no tag, returns "" (displays nothing)
+        if (lower.equals("tag") || lower.equals("playertag") || lower.equals("player_tag")) {
+            if (player == null || plugin.getCosmeticManager() == null || plugin.getTagManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(entry -> {
+                        fun.endcore.escoins.tags.TagDefinition def = plugin.getTagManager().getTag(entry.color());
+                        return def != null ? def.getFormatted() : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_tag_raw% - raw uncolored string e.g. '&8[&#00FF7F&lLucky&8]'
+        if (lower.equals("tag_raw") || lower.equals("playertag_raw")) {
+            if (player == null || plugin.getCosmeticManager() == null || plugin.getTagManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(entry -> {
+                        fun.endcore.escoins.tags.TagDefinition def = plugin.getTagManager().getTag(entry.color());
+                        return def != null ? def.tag() : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_tag_name% / %escore_tag_id%
+        if (lower.equals("tag_name") || lower.equals("tag_id") || lower.equals("playertag_name") || lower.equals("playertag_id")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(fun.endcore.escoins.cosmetics.CosmeticEntry::color)
+                    .orElse("");
+        }
+
+        // %escore_tag_description%
+        if (lower.equals("tag_description") || lower.equals("tag_desc")) {
+            if (player == null || plugin.getCosmeticManager() == null || plugin.getTagManager() == null) return "";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(entry -> {
+                        fun.endcore.escoins.tags.TagDefinition def = plugin.getTagManager().getTag(entry.color());
+                        return def != null ? def.getDescriptionFormatted() : "";
+                    })
+                    .orElse("");
+        }
+
+        // %escore_tag_status% / %escore_tag_enabled%
+        if (lower.equals("tag_status") || lower.equals("playertag_status")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "None";
+            return plugin.getCosmeticManager().getCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(e -> e.active() ? "Enabled" : "Disabled")
+                    .orElse("None");
+        }
+        if (lower.equals("tag_enabled") || lower.equals("playertag_enabled")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "false";
+            return String.valueOf(plugin.getCosmeticManager().isCosmeticActive(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG));
+        }
+
+        // %escore_tag_time%
+        if (lower.equals("tag_time") || lower.equals("playertag_time")) {
+            if (player == null || plugin.getCosmeticManager() == null) return "None";
+            return plugin.getCosmeticManager().getActiveCosmetic(player.getUniqueId(), fun.endcore.escoins.cosmetics.CosmeticType.TAG)
+                    .map(entry -> {
+                        if (entry.ownershipType() == fun.endcore.escoins.cosmetics.OwnershipType.PERMANENT) return "Permanent";
+                        return fun.endcore.escoins.util.DurationParser.formatRemaining(entry.getRemainingMillis());
+                    })
+                    .orElse("None");
+        }
+
         return null;
     }
 }

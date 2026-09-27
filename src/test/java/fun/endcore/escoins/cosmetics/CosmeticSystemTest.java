@@ -20,6 +20,11 @@ class CosmeticSystemTest {
         assertEquals(CosmeticType.PLAYER_GLOW, CosmeticType.fromString("glow"));
         assertEquals(CosmeticType.PLAYER_GLOW, CosmeticType.fromString("pg"));
 
+        assertEquals(CosmeticType.TAG, CosmeticType.fromString("tag"));
+        assertEquals(CosmeticType.TAG, CosmeticType.fromString("tags"));
+        assertEquals(CosmeticType.TAG, CosmeticType.fromString("playertag"));
+        assertEquals(CosmeticType.TAG, CosmeticType.fromString("playertags"));
+
         assertNull(CosmeticType.fromString("unknown"));
     }
 

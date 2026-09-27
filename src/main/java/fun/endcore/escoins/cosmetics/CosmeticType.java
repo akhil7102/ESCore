@@ -5,7 +5,8 @@ package fun.endcore.escoins.cosmetics;
  */
 public enum CosmeticType {
     CHAT_COLOR("chatcolor", "Chat Color"),
-    PLAYER_GLOW("playerglow", "Player Glow");
+    PLAYER_GLOW("playerglow", "Player Glow"),
+    TAG("tag", "Tag");
 
     private final String id;
     private final String displayName;
@@ -32,6 +33,7 @@ public enum CosmeticType {
         return switch (clean) {
             case "chatcolor", "chat", "cc", "color" -> CHAT_COLOR;
             case "playerglow", "glow", "pg" -> PLAYER_GLOW;
+            case "tag", "tags", "playertag", "playertags" -> TAG;
             default -> null;
         };
     }

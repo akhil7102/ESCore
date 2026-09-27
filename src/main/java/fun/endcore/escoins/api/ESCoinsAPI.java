@@ -274,4 +274,40 @@ public interface ESCoinsAPI {
      * @return a CompletableFuture yielding true if successful, false if player does not have the cosmetic
      */
     CompletableFuture<Boolean> setCosmeticActive(UUID uuid, fun.endcore.escoins.cosmetics.CosmeticType type, boolean active);
+
+    // ========================================================
+    // Player Tags API
+    // ========================================================
+
+    /**
+     * Gets the active tag ID of a player, or null if none active or expired.
+     *
+     * @param uuid the player's unique identifier
+     * @return the tag ID or null
+     */
+    String getActiveTag(UUID uuid);
+
+    /**
+     * Gets the formatted active tag string with colors translated,
+     * or empty string "" if none active.
+     *
+     * @param uuid the player's unique identifier
+     * @return formatted tag string or ""
+     */
+    String getActiveTagDisplay(UUID uuid);
+
+    /**
+     * Gets a tag definition by ID.
+     *
+     * @param tagId the tag ID
+     * @return TagDefinition or null
+     */
+    fun.endcore.escoins.tags.TagDefinition getTag(String tagId);
+
+    /**
+     * Gets all registered tag definitions.
+     *
+     * @return collection of all tag definitions
+     */
+    java.util.Collection<fun.endcore.escoins.tags.TagDefinition> getAllTags();
 }

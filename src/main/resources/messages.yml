@@ -212,6 +212,30 @@ cosmetics:
     remove: "&e/cc remove <player> chatcolor &7- Remove player's chat color"
     footer: "&8&m----------------------------------------------------"
 
+# Player Tags Messages
+tags:
+  enabled: "{PREFIX}&aYour tag has been &a&lenabled&a."
+  disabled: "{PREFIX}&cYour tag has been &c&ldisabled&c."
+  already-enabled: "{PREFIX}&cYour tag is already &e&lenabled&c."
+  already-disabled: "{PREFIX}&cYour tag is already &e&ldisabled&c."
+  no-tag: "{PREFIX}&cYou do not have a tag unlocked to toggle."
+  disabled-server: "{PREFIX}&cTags are currently disabled on this server."
+  invalid-tag: "{PREFIX}&cInvalid tag '&e{TAG}&c'. Available tags: &7{TAGS}"
+  selected: "{PREFIX}&aSelected &r{TAG_DISPLAY} &aas your active tag!"
+  not-owned: "{PREFIX}&cYou do not have access to the '&e{TAG}&c' tag."
+  usage: "{PREFIX}&cUsage: /tag <on|off|toggle|list|set <tag>>"
+  set-usage: "{PREFIX}&cUsage: /tag set <tag_id>"
+  list-header: "&8&m----------------&r &b&lAvailable Tags &8&m----------------"
+  list-entry-active: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7) &a&l[ACTIVE]"
+  list-entry-owned: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7) &a✔"
+  list-entry-locked: "&8- &r{TAG_DISPLAY} &7(&e{TAG_NAME}&7) &c✖"
+  list-footer: "&8&m------------------------------------------------"
+  help-onoff: "&e/tag <on|off|toggle> &7- Toggle your active tag on or off"
+  help-list: "&e/tag list &7- View all available tags"
+  help-set: "&e/tag set <tag> &7- Equip a tag you have unlocked"
+  help-give: "&e/tag give <player> <tag_id> <perm|temp <duration>> &7- Grant a tag to a player"
+  help-remove: "&e/tag remove <player> [tag_id] &7- Remove a tag from a player"
+
 # BuiltByBit Update Notifier Messages
 update:
   no-new: "{PREFIX}&aNo new Core SMP updates were found."

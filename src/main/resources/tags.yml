@@ -1,0 +1,185 @@
+# ========================================================
+# ESCore Player Tags Configuration
+# ========================================================
+
+tags:
+  lucky:
+    order: 1
+    tag: '&8[&#00FF7F&lLucky&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.lucky
+  noob:
+    order: 2
+    tag: '&8[&#00BFFF&lNoob&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.noob
+  pro:
+    order: 3
+    tag: '&8[&#FFD700&lPro&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.pro
+  sky:
+    order: 4
+    tag: '&8[&#1E90FF&lSky&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.sky
+  legend:
+    order: 5
+    tag: '&8[&#FF6347&lLegend&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.legend
+  slayer:
+    order: 6
+    tag: '&8[&#FF69B4&lSlayer&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.slayer
+  dream:
+    order: 7
+    tag: '&8[&#8A2BE2&lDream&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.dream
+  frost:
+    order: 8
+    tag: '&8[&#00BFFF&lFrost&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.frost
+  gold:
+    order: 9
+    tag: '&8[&#FFD700&lGold&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.gold
+  aqua:
+    order: 10
+    tag: '&8[&#20B2AA&lAqua&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.aqua
+  shadow:
+    order: 11
+    tag: '&8[&#4B0082&lShadow&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.shadow
+  epic:
+    order: 12
+    tag: '&8[&#FF8C00&lEpic&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.epic
+  king:
+    order: 13
+    tag: '&8[&#DAA520&lKing&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.king
+  fire:
+    order: 14
+    tag: '&8[&#DC143C&lFire&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.fire
+  crystal:
+    order: 15
+    tag: '&8[&#00CED1&lCrystal&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.crystal
+  ninja:
+    order: 16
+    tag: '&8[&#708090&lNinja&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.ninja
+  hunter:
+    order: 17
+    tag: '&8[&#32CD32&lHunter&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.hunter
+  phoenix:
+    order: 18
+    tag: '&8[&#FF4500&lPhoenix&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.phoenix
+  magic:
+    order: 19
+    tag: '&8[&#EE82EE&lMagic&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.magic
+  champion:
+    order: 20
+    tag: '&8[&#FFFF00&lChampion&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.champion
+  assassin:
+    order: 21
+    tag: '&8[&#A52A2A&lAssassin&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.assassin
+  titan:
+    order: 22
+    tag: '&8[&#808000&lTitan&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.titan
+  viper:
+    order: 23
+    tag: '&8[&#7FFF00&lViper&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.viper
+  dragon:
+    order: 24
+    tag: '&8[&#FF6347&lDragon&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.dragon
+  wizard:
+    order: 25
+    tag: '&8[&#9400D3&lWizard&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.wizard
+  samurai:
+    order: 26
+    tag: '&8[&#FF1493&lSamurai&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.samurai
+  warrior:
+    order: 27
+    tag: '&8[&#800080&lWarrior&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.warrior
+  joy:
+    order: 28
+    tag: '&8[&#FF4500&lJoy&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.joy
+  ranger:
+    order: 29
+    tag: '&8[&#32CD32&lRanger&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.ranger
+  ghost:
+    order: 30
+    tag: '&8[&#D3D3D3&lGhost&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.ghost
+  knight:
+    order: 31
+    tag: '&8[&#8B4513&lKnight&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.knight
+  wizardry:
+    order: 32
+    tag: '&8[&#DA70D6&lWizardry&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.wizardry
+  titanic:
+    order: 33
+    tag: '&8[&#FFFF00&lTitanic&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.titanic
+  god:
+    order: 34
+    tag: '&8[&#00FF00&lGod&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.god
+  royal:
+    order: 35
+    tag: '&8[&#C71585&lRoyal&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.royal
+  mythic:
+    order: 36
+    tag: '&8[&#F0E68C&lMythic&8]'
+    description: '&7Unlocked from crates or shop'
+    permission: tags.use.mythic

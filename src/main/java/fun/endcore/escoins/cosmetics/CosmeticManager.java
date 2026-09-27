@@ -485,6 +485,8 @@ public class CosmeticManager {
             return getChatColor(colorName) != null;
         } else if (type == CosmeticType.PLAYER_GLOW) {
             return getGlowColor(colorName) != null;
+        } else if (type == CosmeticType.TAG) {
+            return plugin.getTagManager() != null && plugin.getTagManager().isValidTag(colorName);
         }
         return false;
     }

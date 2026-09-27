@@ -63,15 +63,16 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         mm.sendMessage(sender, "core.header", "&8&m----------------&r &b&lESCore &8&m----------------");
         mm.sendMessage(sender, "core.version", "&7Version: &ev1.0");
         mm.sendMessage(sender, "core.author", "&7Author: &eAKHILPLAYZYT");
-        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| &fClearLag &8| &fSpawn &8| &fArena Regen &8| &fCosmetics");
+        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| &fClearLag &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags");
         if (sender.hasPermission("escoins.admin") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-reload", "&e/escore reload &7- Reload all configurations");
-            mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <glow|chatcolor> <value> <perm|temp [duration]>");
-            mm.sendMessage(sender, "core.cmd-remove", "&e/escore remove <player> <glow|chatcolor>");
+            mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <glow|chatcolor|tag> <value> <perm|temp [duration]>");
+            mm.sendMessage(sender, "core.cmd-remove", "&e/escore remove <player> <glow|chatcolor|tag>");
             mm.sendMessage(sender, "core.cmd-update", "&e/escore update <check|status> &7- BuiltByBit update checker");
         }
         mm.sendMessage(sender, "core.cmd-glow", "&e/glow <on|off> &7- Toggle player glow");
         mm.sendMessage(sender, "core.cmd-chatcolor", "&e/chatcolor <on|off> &7- Toggle chat color");
+        mm.sendMessage(sender, "core.cmd-tag", "&e/tag <on|off|toggle|list|set> &7- Toggle and select player tags");
         mm.sendMessage(sender, "core.cmd-cc", "&e/cc &7- Chat color cosmetic shortcuts");
         mm.sendMessage(sender, "core.cmd-coins", "&e/coins &7- Manage and view premium coins");
         mm.sendMessage(sender, "core.cmd-clearlag", "&e/clearlag &7- Manage entity cleanup system");

@@ -53,22 +53,25 @@ public class CosmeticCommandHandler {
 
         String targetName = args[1];
 
-        // If shorthand command like /cc give <player> ... where feature is omitted
+        // If shorthand command like /cc give <player> ... or /tag give <player> ... where feature is omitted
         String feature;
         int valueIndex;
         int durationTypeIndex;
         int durationValueIndex;
 
         if (fallbackType != null && args.length >= 3 && !isFeatureKeyword(args[2])) {
-            // E.g. /cc give AKHILPLAYZYT green perm
-            feature = fallbackType == CosmeticType.CHAT_COLOR ? "chatcolor" : "glow";
+            feature = switch (fallbackType) {
+                case CHAT_COLOR -> "chatcolor";
+                case PLAYER_GLOW -> "glow";
+                case TAG -> "tag";
+            };
             valueIndex = 2;
             durationTypeIndex = 3;
             durationValueIndex = 4;
         } else {
             if (args.length < 3) {
                 mm.sendMessage(sender, "escore.give.hint-feature",
-                        "{PREFIX}&cUsage: /escore give " + targetName + " <feature> <value> <duration>\n&7Next argument: &e<feature> &7(Options: &aglow&7, &achatcolor&7)");
+                        "{PREFIX}&cUsage: /escore give " + targetName + " <feature> <value> <duration>\n&7Next argument: &e<feature> &7(Options: &aglow&7, &achatcolor&7, &atag&7)");
                 return true;
             }
             feature = normalizeFeature(args[2]);
@@ -79,7 +82,7 @@ public class CosmeticCommandHandler {
 
         if (feature == null) {
             mm.sendMessage(sender, "escore.give.invalid-feature",
-                    "{PREFIX}&cInvalid feature '&e{FEATURE}&c'. Valid features: &aglow&c, &achatcolor&c.",
+                    "{PREFIX}&cInvalid feature '&e{FEATURE}&c'. Valid features: &aglow&c, &achatcolor&c, &atag&c.",
                     "{FEATURE}", args[2]);
             return true;
         }
@@ -111,6 +114,16 @@ public class CosmeticCommandHandler {
                         "{PREFIX}&cInvalid chat color '&e{COLOR}&c'. Available: &7{COLORS}",
                         "{COLOR}", rawValue.toLowerCase(),
                         "{COLORS}", available);
+                return true;
+            }
+        } else if (feature.equals("tag")) {
+            fun.endcore.escoins.tags.TagManager tm = plugin.getTagManager();
+            if (tm == null || !tm.isValidTag(rawValue)) {
+                String available = tm != null ? String.join(", ", tm.getAllTagIds()) : "None";
+                mm.sendMessage(sender, "tags.invalid-tag",
+                        "{PREFIX}&cInvalid tag '&e{TAG}&c'. Available: &7{TAGS}",
+                        "{TAG}", rawValue.toLowerCase(),
+                        "{TAGS}", available);
                 return true;
             }
         }
@@ -175,7 +188,12 @@ public class CosmeticCommandHandler {
 
             TargetProfile target = optPlayer.get();
 
-            CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
+            CosmeticType cosmeticType = switch (finalFeature) {
+                case "glow" -> CosmeticType.PLAYER_GLOW;
+                case "chatcolor" -> CosmeticType.CHAT_COLOR;
+                case "tag" -> CosmeticType.TAG;
+                default -> CosmeticType.TAG;
+            };
             CosmeticManager cm = plugin.getCosmeticManager();
             CompletableFuture<Boolean> future;
 
@@ -188,16 +206,24 @@ public class CosmeticCommandHandler {
             future.thenAccept(success -> {
                 if (success) {
                     String featureLabel = cosmeticType.getDisplayName();
+                    String valueDisplay = finalValue;
+                    if (cosmeticType == CosmeticType.TAG && plugin.getTagManager() != null) {
+                        fun.endcore.escoins.tags.TagDefinition td = plugin.getTagManager().getTag(finalValue);
+                        if (td != null) {
+                            valueDisplay = td.getFormatted();
+                        }
+                    }
+
                     if (finalOwnership == OwnershipType.PERMANENT) {
                         mm.sendMessage(sender, "cosmetics.given-perm",
                                 "{PREFIX}&aGranted permanent &e{COLOR} {TYPE} &ato &e{PLAYER}&a.",
-                                "{COLOR}", finalValue,
+                                "{COLOR}", valueDisplay,
                                 "{TYPE}", featureLabel,
                                 "{PLAYER}", target.name());
                     } else {
                         mm.sendMessage(sender, "cosmetics.given-temp",
                                 "{PREFIX}&aGranted temporary &e{COLOR} {TYPE} &ato &e{PLAYER} &afor &e{DURATION}&a.",
-                                "{COLOR}", finalValue,
+                                "{COLOR}", valueDisplay,
                                 "{TYPE}", featureLabel,
                                 "{PLAYER}", target.name(),
                                 "{DURATION}", finalDurationFormatted);
@@ -208,12 +234,12 @@ public class CosmeticCommandHandler {
                         if (finalOwnership == OwnershipType.PERMANENT) {
                             mm.sendMessage(online, "cosmetics.received-perm",
                                     "{PREFIX}&aYou received permanent &e{COLOR} {TYPE}&a!",
-                                    "{COLOR}", finalValue,
+                                    "{COLOR}", valueDisplay,
                                     "{TYPE}", featureLabel);
                         } else {
                             mm.sendMessage(online, "cosmetics.received-temp",
                                     "{PREFIX}&aYou received temporary &e{COLOR} {TYPE} &afor &e{DURATION}&a!",
-                                    "{COLOR}", finalValue,
+                                    "{COLOR}", valueDisplay,
                                     "{TYPE}", featureLabel,
                                     "{DURATION}", finalDurationFormatted);
                         }
@@ -233,10 +259,14 @@ public class CosmeticCommandHandler {
             String available = plugin.getCosmeticManager() != null ? String.join(", ", plugin.getCosmeticManager().getAvailableGlowColors()) : "None";
             mm.sendMessage(sender, "escore.give.hint-glow",
                     "{PREFIX}&cUsage: /escore give " + player + " glow <color> <duration>\n&7Next argument: &e<color> &7(Available glow colors: &f" + available + "&7)");
-        } else {
+        } else if (feature.equals("chatcolor")) {
             String available = plugin.getCosmeticManager() != null ? String.join(", ", plugin.getCosmeticManager().getAvailableChatColors().stream().map(CosmeticColor::name).toList()) : "None";
             mm.sendMessage(sender, "escore.give.hint-chatcolor",
                     "{PREFIX}&cUsage: /escore give " + player + " chatcolor <color> <duration>\n&7Next argument: &e<color> &7(Available chat colors: &f" + available + "&7)");
+        } else if (feature.equals("tag")) {
+            String available = plugin.getTagManager() != null ? String.join(", ", plugin.getTagManager().getAllTagIds()) : "None";
+            mm.sendMessage(sender, "escore.give.hint-tag",
+                    "{PREFIX}&cUsage: /escore give " + player + " tag <tag_id> <duration>\n&7Next argument: &e<tag_id> &7(Available tags: &f" + available + "&7)");
         }
     }
 
@@ -253,7 +283,7 @@ public class CosmeticCommandHandler {
 
         if (args.length < 2) {
             mm.sendMessage(sender, "cosmetics.usage-remove",
-                    "{PREFIX}&cUsage: /escore remove <player> <glow|chatcolor>");
+                    "{PREFIX}&cUsage: /escore remove <player> <glow|chatcolor|tag>");
             return true;
         }
 
@@ -262,14 +292,18 @@ public class CosmeticCommandHandler {
         String optionalValue = null;
 
         if (fallbackType != null && (args.length < 3 || !isFeatureKeyword(args[2]))) {
-            feature = fallbackType == CosmeticType.CHAT_COLOR ? "chatcolor" : "glow";
+            feature = switch (fallbackType) {
+                case CHAT_COLOR -> "chatcolor";
+                case PLAYER_GLOW -> "glow";
+                case TAG -> "tag";
+            };
             if (args.length >= 3) {
                 optionalValue = args[2];
             }
         } else {
             if (args.length < 3) {
                 mm.sendMessage(sender, "cosmetics.usage-remove",
-                        "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor>");
+                        "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor|tag>");
                 return true;
             }
             feature = normalizeFeature(args[2]);
@@ -280,7 +314,7 @@ public class CosmeticCommandHandler {
 
         if (feature == null) {
             mm.sendMessage(sender, "cosmetics.usage-remove",
-                    "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor>");
+                    "{PREFIX}&cUsage: /escore remove " + targetName + " <glow|chatcolor|tag>");
             return true;
         }
 
@@ -296,7 +330,12 @@ public class CosmeticCommandHandler {
 
             TargetProfile target = optPlayer.get();
 
-            CosmeticType cosmeticType = finalFeature.equals("glow") ? CosmeticType.PLAYER_GLOW : CosmeticType.CHAT_COLOR;
+            CosmeticType cosmeticType = switch (finalFeature) {
+                case "glow" -> CosmeticType.PLAYER_GLOW;
+                case "chatcolor" -> CosmeticType.CHAT_COLOR;
+                case "tag" -> CosmeticType.TAG;
+                default -> CosmeticType.TAG;
+            };
             CosmeticManager cm = plugin.getCosmeticManager();
             cm.removeCosmetic(target.uuid(), cosmeticType).thenAccept(success -> {
                 mm.sendMessage(sender, "cosmetics.removed",
@@ -318,16 +357,18 @@ public class CosmeticCommandHandler {
 
     private boolean isFeatureKeyword(String str) {
         if (str == null) return false;
-        String lower = str.toLowerCase();
-        return lower.equals("glow") || lower.equals("playerglow") ||
-               lower.equals("chatcolor") || lower.equals("color");
+        String lower = str.toLowerCase().replace("-", "").replace("_", "");
+        return lower.equals("glow") || lower.equals("playerglow") || lower.equals("pg") ||
+               lower.equals("chatcolor") || lower.equals("color") || lower.equals("cc") ||
+               lower.equals("tag") || lower.equals("tags") || lower.equals("playertag");
     }
 
     private String normalizeFeature(String str) {
         if (str == null) return null;
-        String lower = str.toLowerCase();
-        if (lower.equals("glow") || lower.equals("playerglow")) return "glow";
-        if (lower.equals("chatcolor") || lower.equals("color")) return "chatcolor";
+        String lower = str.toLowerCase().replace("-", "").replace("_", "");
+        if (lower.equals("glow") || lower.equals("playerglow") || lower.equals("pg")) return "glow";
+        if (lower.equals("chatcolor") || lower.equals("color") || lower.equals("cc")) return "chatcolor";
+        if (lower.equals("tag") || lower.equals("tags") || lower.equals("playertag")) return "tag";
         return null;
     }
 
@@ -397,16 +438,20 @@ public class CosmeticCommandHandler {
         }
 
         if (fixedType != null) {
-            // E.g. /cc give <player> <TAB>
+            String featureName = switch (fixedType) {
+                case CHAT_COLOR -> "chatcolor";
+                case PLAYER_GLOW -> "glow";
+                case TAG -> "tag";
+            };
             if (args.length == 3) {
                 List<String> list = new ArrayList<>();
-                list.add("chatcolor");
-                list.addAll(getColorsForFeature("chatcolor"));
+                list.add(featureName);
+                list.addAll(getColorsForFeature(featureName));
                 return list.stream().filter(s -> s.startsWith(args[2].toLowerCase())).toList();
             }
-            if (args[2].equalsIgnoreCase("chatcolor")) {
+            if (args[2].equalsIgnoreCase(featureName)) {
                 if (args.length == 4) {
-                    return getColorsForFeature("chatcolor").stream().filter(s -> s.startsWith(args[3].toLowerCase())).toList();
+                    return getColorsForFeature(featureName).stream().filter(s -> s.startsWith(args[3].toLowerCase())).toList();
                 }
                 if (args.length == 5) {
                     return List.of("perm", "temp").stream().filter(s -> s.startsWith(args[4].toLowerCase())).toList();
@@ -426,16 +471,16 @@ public class CosmeticCommandHandler {
         }
 
         // Standard /escore give <player> ...
-        // 2. /escore give <player> <TAB> -> glow, chatcolor
+        // 2. /escore give <player> <TAB> -> glow, chatcolor, tag
         if (args.length == 3) {
-            return List.of("glow", "chatcolor").stream()
+            return List.of("glow", "chatcolor", "tag").stream()
                     .filter(s -> s.startsWith(args[2].toLowerCase()))
                     .toList();
         }
 
         String feature = normalizeFeature(args[2]);
         if (feature != null) {
-            // 3. /escore give <player> <feature> <TAB> -> Values (colors)
+            // 3. /escore give <player> <feature> <TAB> -> Values (colors or tags)
             if (args.length == 4) {
                 String current = args[3].toLowerCase();
                 return getColorsForFeature(feature).stream()
@@ -471,9 +516,14 @@ public class CosmeticCommandHandler {
         }
         if (args.length == 3) {
             if (fixedType != null) {
-                return List.of("chatcolor").stream().filter(s -> s.startsWith(args[2].toLowerCase())).toList();
+                String featureName = switch (fixedType) {
+                    case CHAT_COLOR -> "chatcolor";
+                    case PLAYER_GLOW -> "glow";
+                    case TAG -> "tag";
+                };
+                return List.of(featureName).stream().filter(s -> s.startsWith(args[2].toLowerCase())).toList();
             }
-            return List.of("glow", "chatcolor").stream()
+            return List.of("glow", "chatcolor", "tag").stream()
                     .filter(s -> s.startsWith(args[2].toLowerCase()))
                     .toList();
         }
@@ -487,6 +537,9 @@ public class CosmeticCommandHandler {
         } else if (feature.equals("chatcolor")) {
             if (plugin.getCosmeticManager() == null) return List.of();
             return plugin.getCosmeticManager().getAvailableChatColors().stream().map(CosmeticColor::name).toList();
+        } else if (feature.equals("tag")) {
+            if (plugin.getTagManager() == null) return List.of();
+            return new ArrayList<>(plugin.getTagManager().getAllTagIds());
         }
         return List.of();
     }
