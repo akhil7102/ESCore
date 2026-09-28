@@ -160,20 +160,27 @@ public class ArenaCommand implements CommandExecutor, TabCompleter {
 
     private void handleRegenerate(CommandSender sender, String arenaName) {
         MessageManager mm = plugin.getMessageManager();
-        mm.sendMessage(sender, "arena.regenerating", "{PREFIX}&7Regenerating arena &e{ARENA}&7...",
-                "{ARENA}", arenaName);
 
         try {
-            RestoreResult result = plugin.getArenaManager().regenerateArena(arenaName);
-            mm.sendMessage(sender, "arena.regenerated", "{PREFIX}&aArena &e{ARENA} &aregenerated successfully! &7({MODIFIED} blocks changed in {TIME}ms)",
-                    "{ARENA}", arenaName,
-                    "{MODIFIED}", String.valueOf(result.modifiedBlocks()),
-                    "{TIME}", String.valueOf(result.elapsedMs()));
+            plugin.getArenaManager().regenerateArena(arenaName, (result, error) -> {
+                if (error != null) {
+                    plugin.getLogger().log(Level.SEVERE, "Failed to regenerate arena " + arenaName, error);
+                    sender.sendMessage(mm.parse(mm.getPrefix() + "&cFailed to regenerate arena: " + error.getMessage()));
+                } else if (result != null) {
+                    mm.sendMessage(sender, "arena.regenerated", "{PREFIX}&aArena &e{ARENA} &aregenerated successfully! &7({MODIFIED} blocks changed in {TIME}ms)",
+                            "{ARENA}", arenaName,
+                            "{MODIFIED}", String.valueOf(result.modifiedBlocks()),
+                            "{TIME}", String.valueOf(result.elapsedMs()));
+                }
+            });
+
+            mm.sendMessage(sender, "arena.regenerating", "{PREFIX}&7Starting regeneration for arena &e{ARENA}&7...",
+                    "{ARENA}", arenaName);
         } catch (ArenaException e) {
             sender.sendMessage(mm.parse(mm.getPrefix() + "&c" + e.getMessage()));
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to regenerate arena " + arenaName, e);
-            sender.sendMessage(mm.parse(mm.getPrefix() + "&cFailed to regenerate arena: " + e.getMessage()));
+            plugin.getLogger().log(Level.SEVERE, "Failed to initiate arena regeneration for " + arenaName, e);
+            sender.sendMessage(mm.parse(mm.getPrefix() + "&cFailed to initiate regeneration: " + e.getMessage()));
         }
     }
 

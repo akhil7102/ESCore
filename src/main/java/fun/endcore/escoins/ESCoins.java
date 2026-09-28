@@ -19,6 +19,7 @@ import fun.endcore.escoins.spawn.SpawnManager;
 import fun.endcore.escoins.util.MessageManager;
 import fun.endcore.escoins.util.NumberFormatter;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -155,9 +156,9 @@ public class ESCoins extends JavaPlugin {
             leaderboard = null;
         }
 
-        // Save Arena Manager
+        // Stop Arena Manager
         if (arenaManager != null) {
-            arenaManager.saveAll();
+            arenaManager.stop();
             arenaManager = null;
         }
 
@@ -177,6 +178,29 @@ public class ESCoins extends JavaPlugin {
         if (updateChecker != null) {
             updateChecker.stop();
             updateChecker = null;
+        }
+
+        // Save safe logout locations for all currently online players before shutting down database
+        if (spawnManager != null && databaseManager != null) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!player.isDead() && player.getHealth() > 0) {
+                    Location loc = player.getLocation();
+                    if (spawnManager.isLocationSafe(loc)) {
+                        databaseManager.savePlayerLocation(
+                                player.getUniqueId(),
+                                loc.getWorld().getName(),
+                                loc.getX(), loc.getY(), loc.getZ(),
+                                loc.getYaw(), loc.getPitch()
+                        );
+                    }
+                }
+            }
+        }
+
+        // Stop Spawn Manager
+        if (spawnManager != null) {
+            spawnManager.stop();
+            spawnManager = null;
         }
 
         // Unregister API

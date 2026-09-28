@@ -11,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
@@ -125,26 +126,33 @@ public class SpawnManager {
         );
 
         Location startLoc = player.getLocation().clone();
-        int[] remaining = {teleportDelay};
 
-        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (!player.isOnline()) {
-                cancelTeleport(uuid, false);
-                return;
+        BukkitRunnable runnable = new BukkitRunnable() {
+            private int remaining = teleportDelay;
+
+            @Override
+            public void run() {
+                if (!player.isOnline()) {
+                    cancel();
+                    pendingTeleports.remove(uuid);
+                    return;
+                }
+
+                remaining--;
+
+                if (remaining > 0) {
+                    mm.sendMessage(player, "spawn.teleport-countdown", "{PREFIX} &7Teleporting in &e{TIME}&7 seconds... Don't move!",
+                            "{TIME}", String.valueOf(remaining)
+                    );
+                } else {
+                    cancel();
+                    pendingTeleports.remove(uuid);
+                    executeTeleport(player);
+                }
             }
+        };
 
-            remaining[0]--;
-
-            if (remaining[0] > 0) {
-                mm.sendMessage(player, "spawn.teleport-countdown", "{PREFIX} &7Teleporting in &e{TIME}&7 seconds... Don't move!",
-                        "{TIME}", String.valueOf(remaining[0])
-                );
-            } else {
-                pendingTeleports.remove(uuid);
-                executeTeleport(player);
-            }
-        }, 20L, 20L);
-
+        BukkitTask task = runnable.runTaskTimer(plugin, 20L, 20L);
         pendingTeleports.put(uuid, new PendingTeleport(task, startLoc));
     }
 
@@ -179,6 +187,18 @@ public class SpawnManager {
 
     public boolean hasPendingTeleports() {
         return !pendingTeleports.isEmpty();
+    }
+
+    /**
+     * Cancels all pending teleports on plugin disable/reload.
+     */
+    public void stop() {
+        for (PendingTeleport pt : pendingTeleports.values()) {
+            if (pt != null && pt.task() != null) {
+                pt.task().cancel();
+            }
+        }
+        pendingTeleports.clear();
     }
 
     /**
@@ -284,9 +304,17 @@ public class SpawnManager {
             float yaw = loc.getYaw();
             float pitch = loc.getPitch();
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                plugin.getDatabaseManager().savePlayerLocation(uuid, world, x, y, z, yaw, pitch);
-            });
+            if (!plugin.isEnabled()) {
+                if (plugin.getDatabaseManager() != null) {
+                    plugin.getDatabaseManager().savePlayerLocation(uuid, world, x, y, z, yaw, pitch);
+                }
+            } else {
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    if (plugin.getDatabaseManager() != null) {
+                        plugin.getDatabaseManager().savePlayerLocation(uuid, world, x, y, z, yaw, pitch);
+                    }
+                });
+            }
         }
     }
 

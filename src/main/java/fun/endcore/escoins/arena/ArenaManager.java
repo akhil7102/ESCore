@@ -2,9 +2,13 @@ package fun.endcore.escoins.arena;
 
 import fun.endcore.escoins.ESCoins;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -12,11 +16,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 /**
@@ -30,6 +37,10 @@ public class ArenaManager {
 
     private final Map<String, ArenaRegion> arenas = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private final Map<UUID, PlayerSelection> selections = new ConcurrentHashMap<>();
+
+    // Active regenerations protection and task tracking
+    private final Set<String> activeRegenerations = ConcurrentHashMap.newKeySet();
+    private final Map<String, BukkitTask> activeRegenTasks = new ConcurrentHashMap<>();
 
     public ArenaManager(ESCoins plugin) {
         this.plugin = plugin;
@@ -147,7 +158,7 @@ public class ArenaManager {
             throw new ArenaException("Position 1 and Position 2 must be in the same world.");
         }
 
-        int maxBlocks = getMaxBlocks();
+        long maxBlocks = getMaxBlocks();
         if (maxBlocks > 0 && sel.getTotalBlocks() > maxBlocks) {
             throw new ArenaException("Arena volume (" + sel.getTotalBlocks() + " blocks) exceeds maximum allowed size (" + maxBlocks + " blocks).");
         }
@@ -188,6 +199,300 @@ public class ArenaManager {
         return ArenaSnapshot.saveSnapshot(region, getSnapshotFile(name));
     }
 
+    public boolean isRegenerating(String arenaName) {
+        return arenaName != null && activeRegenerations.contains(arenaName.toLowerCase());
+    }
+
+    /**
+     * Finds a safe location for players outside the specified arena region.
+     * Checks server spawn first (if outside arena), followed by safe positions around the cuboid perimeters.
+     * Returns null if no safe location could be found.
+     */
+    public Location findSafeExitLocation(ArenaRegion region) {
+        // 1. Try server spawn if configured and safe
+        Location spawnLoc = plugin.getSpawnManager().getSpawnLocation();
+        if (spawnLoc != null && spawnLoc.getWorld() != null && plugin.getSpawnManager().isLocationSafe(spawnLoc)) {
+            if (!region.contains(spawnLoc)) {
+                return spawnLoc;
+            }
+        }
+
+        World world = region.getWorld();
+        if (world == null) return null;
+
+        // 2. Scan safe ground positions outside the 4 perimeters of the cuboid
+        int midX = (region.getMinX() + region.getMaxX()) / 2;
+        int midZ = (region.getMinZ() + region.getMaxZ()) / 2;
+
+        int[][] perimeterCoords = {
+                {region.getMinX() - 2, midZ},
+                {region.getMaxX() + 2, midZ},
+                {midX, region.getMinZ() - 2},
+                {midX, region.getMaxZ() + 2}
+        };
+
+        for (int[] coords : perimeterCoords) {
+            int cx = coords[0];
+            int cz = coords[1];
+
+            int maxY = Math.min(world.getMaxHeight() - 2, region.getMaxY() + 5);
+            int minY = Math.max(world.getMinHeight() + 1, region.getMinY() - 5);
+
+            for (int y = maxY; y >= minY; y--) {
+                Location candidate = new Location(world, cx + 0.5, y, cz + 0.5);
+                if (plugin.getSpawnManager().isLocationSafe(candidate)) {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Regenerates an arena asynchronously loading snapshot data, safely moving any inside players,
+     * and restoring blocks layer-by-layer and row-by-row with adaptive pacing.
+     *
+     * @param name     The arena name
+     * @param callback Callback executed on completion or failure
+     * @throws ArenaException If preconditions fail (arena doesn't exist, no snapshot, already regenerating, or unsafe)
+     */
+    public void regenerateArena(String name, BiConsumer<RestoreResult, Throwable> callback) throws ArenaException {
+        ArenaRegion region = getArena(name);
+        if (region == null) {
+            throw new ArenaException("Arena '" + name + "' does not exist.");
+        }
+        File snapshot = getSnapshotFile(name);
+        if (!snapshot.exists()) {
+            throw new ArenaException("Arena '" + name + "' has no saved snapshot. Use /arena regen " + name + " save first.");
+        }
+
+        String lower = name.toLowerCase();
+        if (activeRegenerations.contains(lower)) {
+            throw new ArenaException("Arena '" + name + "' is already currently being regenerated!");
+        }
+
+        World world = region.getWorld();
+        if (world == null) {
+            throw new ArenaException("World '" + region.getWorldName() + "' is not loaded or does not exist.");
+        }
+
+        // PLAYER SAFETY CHECK: Detect players inside arena region before restoring blocks
+        List<Player> playersInside = new ArrayList<>();
+        for (Player p : world.getPlayers()) {
+            if (region.contains(p.getLocation())) {
+                playersInside.add(p);
+            }
+        }
+
+        Location safeExit = null;
+        if (!playersInside.isEmpty()) {
+            safeExit = findSafeExitLocation(region);
+            if (safeExit == null) {
+                // No safe destination available: cancel regeneration rather than trapping players
+                throw new ArenaException("Regeneration cancelled: Players are inside arena '" + name + "' and no safe exit destination could be found.");
+            }
+
+            // Safely move players out of the arena region
+            for (Player p : playersInside) {
+                p.teleport(safeExit);
+                p.playSound(safeExit, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
+                plugin.getMessageManager().sendMessage(p, "arena.player-safety-moved",
+                        "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!",
+                        "{ARENA}", region.getName());
+            }
+        }
+
+        activeRegenerations.add(lower);
+
+        // Load snapshot asynchronously
+        final Location finalSafeExit = safeExit != null ? safeExit : findSafeExitLocation(region);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            ArenaSnapshot.LoadedSnapshot loaded;
+            try {
+                loaded = ArenaSnapshot.loadSnapshot(snapshot, region);
+            } catch (Throwable t) {
+                activeRegenerations.remove(lower);
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null, t));
+                return;
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    startPacedRegeneration(region, loaded, finalSafeExit, callback);
+                } catch (Throwable t) {
+                    activeRegenerations.remove(lower);
+                    callback.accept(null, t);
+                }
+            });
+        });
+    }
+
+    private void startPacedRegeneration(ArenaRegion region, ArenaSnapshot.LoadedSnapshot snapshot, Location safeExit, BiConsumer<RestoreResult, Throwable> callback) {
+        String lower = region.getName().toLowerCase();
+        World world = region.getWorld();
+        if (world == null || !plugin.isEnabled()) {
+            activeRegenerations.remove(lower);
+            callback.accept(null, new IllegalStateException("World is unloaded or plugin is disabled."));
+            return;
+        }
+
+        int minX = region.getMinX();
+        int minY = region.getMinY();
+        int minZ = region.getMinZ();
+        int maxX = region.getMaxX();
+        int maxZ = region.getMaxZ();
+
+        ArenaSnapshot.ensureChunksLoaded(world, minX, maxX, minZ, maxZ);
+
+        FileConfiguration config = plugin.getConfigManager().getConfig();
+        int baseBlocksPerTick = Math.max(1, config.getInt("arena-regen.blocks-per-tick", 250));
+        int delayRows = Math.max(0, config.getInt("arena-regen.delay-between-rows-ticks", 1));
+        int delayLayers = Math.max(0, config.getInt("arena-regen.delay-between-layers-ticks", 2));
+        boolean adaptive = config.getBoolean("arena-regen.adaptive-pacing", true);
+        int targetSec = Math.max(1, config.getInt("arena-regen.target-duration-seconds", 30));
+        int maxSec = Math.max(targetSec, config.getInt("arena-regen.maximum-duration-seconds", 300));
+        int minSec = Math.max(1, config.getInt("arena-regen.minimum-duration-seconds", 5));
+
+        long totalBlocks = snapshot.getTotalBlocks();
+        int blocksPerTick = baseBlocksPerTick;
+
+        if (adaptive) {
+            long targetTicks = (long) targetSec * 20L;
+            long minTicks = (long) minSec * 20L;
+            long maxTicks = (long) maxSec * 20L;
+            long desiredTicks = Math.max(minTicks, Math.min(maxTicks, targetTicks));
+
+            long totalRows = (long) snapshot.sizeY() * snapshot.sizeZ();
+            long delayOverheadTicks = (totalRows * delayRows) + ((long) snapshot.sizeY() * delayLayers);
+
+            if (delayOverheadTicks >= desiredTicks) {
+                delayRows = 0;
+                delayLayers = Math.min(1, delayLayers);
+                delayOverheadTicks = (long) snapshot.sizeY() * delayLayers;
+            }
+
+            long availableTicks = Math.max(1L, desiredTicks - delayOverheadTicks);
+            blocksPerTick = (int) Math.min(2500L, Math.max(25L, (totalBlocks + availableTicks - 1) / availableTicks));
+        }
+
+        final int effectiveBlocksPerTick = blocksPerTick;
+        final int effectiveDelayRows = delayRows;
+        final int effectiveDelayLayers = delayLayers;
+        final long startTime = System.currentTimeMillis();
+        final int sizeX = snapshot.sizeX();
+        final int sizeY = snapshot.sizeY();
+        final int sizeZ = snapshot.sizeZ();
+        final org.bukkit.block.data.BlockData[] palette = snapshot.palette();
+        final short[] blockIndices = snapshot.blockIndices();
+
+        BukkitRunnable runnable = new BukkitRunnable() {
+            private int currentY = 0;
+            private int currentZ = 0;
+            private int currentX = 0;
+            private int delayTicksRemaining = 0;
+            private int modifiedCount = 0;
+
+            @Override
+            public void run() {
+                if (!plugin.isEnabled()) {
+                    cancel();
+                    activeRegenTasks.remove(lower);
+                    activeRegenerations.remove(lower);
+                    return;
+                }
+
+                if (delayTicksRemaining > 0) {
+                    delayTicksRemaining--;
+                    return;
+                }
+
+                // Continuous player safety check during active regeneration
+                if (safeExit != null) {
+                    for (Player p : world.getPlayers()) {
+                        if (region.contains(p.getLocation())) {
+                            p.teleport(safeExit);
+                            plugin.getMessageManager().sendMessage(p, "arena.player-safety-moved",
+                                    "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!",
+                                    "{ARENA}", region.getName());
+                        }
+                    }
+                }
+
+                int placedThisTick = 0;
+
+                while (placedThisTick < effectiveBlocksPerTick && currentY < sizeY) {
+                    int idx = currentY * (sizeZ * sizeX) + currentZ * sizeX + currentX;
+                    org.bukkit.block.data.BlockData targetData = palette[blockIndices[idx]];
+                    int worldX = minX + currentX;
+                    int worldY = minY + currentY;
+                    int worldZ = minZ + currentZ;
+
+                    Block block = world.getBlockAt(worldX, worldY, worldZ);
+                    if (!block.getBlockData().matches(targetData)) {
+                        block.setBlockData(targetData, false);
+                        modifiedCount++;
+                    }
+
+                    placedThisTick++;
+                    currentX++;
+
+                    if (currentX >= sizeX) {
+                        currentX = 0;
+                        currentZ++;
+
+                        if (currentZ >= sizeZ) {
+                            currentZ = 0;
+                            currentY++;
+
+                            if (currentY >= sizeY) {
+                                break;
+                            }
+
+                            if (effectiveDelayLayers > 0) {
+                                delayTicksRemaining = effectiveDelayLayers;
+                                return;
+                            }
+                        } else if (effectiveDelayRows > 0) {
+                            delayTicksRemaining = effectiveDelayRows;
+                            return;
+                        }
+                    }
+                }
+
+                if (currentY >= sizeY) {
+                    // Complete!
+                    cancel();
+                    activeRegenTasks.remove(lower);
+                    activeRegenerations.remove(lower);
+
+                    // Apply tile entities (containers, signs)
+                    for (ArenaSnapshot.TileData td : snapshot.tileDataList()) {
+                        td.apply(world, minX, minY, minZ);
+                    }
+
+                    // Clear loose entities if enabled
+                    if (isClearEntities()) {
+                        org.bukkit.util.BoundingBox box = new org.bukkit.util.BoundingBox(minX, minY, minZ, region.getMaxX() + 1.0, region.getMaxY() + 1.0, region.getMaxZ() + 1.0);
+                        for (org.bukkit.entity.Entity entity : world.getNearbyEntities(box)) {
+                            if (entity instanceof Player || entity.hasMetadata("NPC")) {
+                                continue;
+                            }
+                            entity.remove();
+                        }
+                    }
+
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    RestoreResult result = new RestoreResult(modifiedCount, totalBlocks, elapsed);
+                    callback.accept(result, null);
+                }
+            }
+        };
+
+        BukkitTask task = runnable.runTaskTimer(plugin, 1L, 1L);
+        activeRegenTasks.put(lower, task);
+    }
+
     public RestoreResult regenerateArena(String name) throws ArenaException, IOException {
         ArenaRegion region = getArena(name);
         if (region == null) {
@@ -197,7 +502,24 @@ public class ArenaManager {
         if (!snapshot.exists()) {
             throw new ArenaException("Arena '" + name + "' has no saved snapshot. Use /arena regen " + name + " save first.");
         }
+        if (activeRegenerations.contains(name.toLowerCase())) {
+            throw new ArenaException("Arena '" + name + "' is already currently being regenerated!");
+        }
         return ArenaSnapshot.restoreSnapshot(region, snapshot, isClearEntities());
+    }
+
+    /**
+     * Stops and cancels all currently active regeneration tasks on plugin disable/reload.
+     */
+    public void stop() {
+        for (BukkitTask task : activeRegenTasks.values()) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        activeRegenTasks.clear();
+        activeRegenerations.clear();
+        saveAll();
     }
 
     // ========================================================
@@ -287,8 +609,8 @@ public class ArenaManager {
         return false;
     }
 
-    public int getMaxBlocks() {
-        return plugin.getConfigManager().getConfig().getInt("arena-regen.max-blocks", 1000000);
+    public long getMaxBlocks() {
+        return plugin.getConfigManager().getConfig().getLong("arena-regen.max-blocks", 1000000L);
     }
 
     public boolean isClearEntities() {

@@ -71,6 +71,11 @@ public class CoinManager {
      */
     public void onPlayerQuit(UUID uuid) {
         rankCache.remove(uuid);
+        // Bounded cache maintenance: prevent unbounded growth from offline player lookups
+        if (balanceCache.size() > 2000) {
+            balanceCache.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+            usernameCache.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+        }
     }
 
     /**

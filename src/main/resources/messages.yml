@@ -260,3 +260,23 @@ update:
   status-last-date: "&7Last Update Date: &7{DATE}"
   status-next-check: "&7Next Check: &e{NEXT_CHECK}"
   status-footer: "&8&m----------------------------------------------------"
+
+# Arena Regeneration System Messages
+arena:
+  wand-given: "{PREFIX}&aYou received the Arena Selection Wand. Left-click for pos 1, right-click for pos 2."
+  create-usage: "{PREFIX}&cUsage: /arena regen create <arena>"
+  created: "{PREFIX}&aArena &e{ARENA} &acreated successfully! &7({BLOCKS} blocks)"
+  save-usage: "{PREFIX}&cUsage: /arena regen <arena> save"
+  saving: "{PREFIX}&7Saving snapshot for arena &e{ARENA}&7..."
+  saved: "{PREFIX}&aSnapshot for arena &e{ARENA} &asaved successfully! &7({BLOCKS} blocks)"
+  regen-usage: "{PREFIX}&cUsage: /arena regen regenerate <arena>"
+  regenerating: "{PREFIX}&7Starting regeneration for arena &e{ARENA}&7..."
+  regenerated: "{PREFIX}&aArena &e{ARENA} &aregenerated successfully! &7({MODIFIED} blocks changed in {TIME}ms)"
+  already-regenerating: "{PREFIX}&cArena &e{ARENA} &cis already currently being regenerated!"
+  delete-usage: "{PREFIX}&cUsage: /arena regen delete <arena>"
+  deleted: "{PREFIX}&aArena &e{ARENA} &adeleted successfully."
+  list-empty: "{PREFIX}&7No arenas have been created yet."
+  list-header: "&8&m----------------&r &b&lArenas &8&m----------------"
+  list-entry: "&e{ARENA} &7- &f{WORLD} &8(&7{SIZE_X}x{SIZE_Y}x{SIZE_Z}&8, &7{BLOCKS} blocks&8) {SNAPSHOT_STATUS}"
+  player-safety-moved: "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!"
+  safety-cancel-no-destination: "{PREFIX}&cRegeneration cancelled: Players are inside arena &e{ARENA} &cand no safe exit destination could be found."

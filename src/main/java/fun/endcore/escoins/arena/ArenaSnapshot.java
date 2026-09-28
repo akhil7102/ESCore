@@ -158,7 +158,81 @@ public class ArenaSnapshot {
     }
 
     /**
-     * Restores an arena from its saved snapshot.
+     * In-memory representation of an uncompressed snapshot ready for restoration.
+     */
+    public record LoadedSnapshot(
+            int sizeX,
+            int sizeY,
+            int sizeZ,
+            BlockData[] palette,
+            short[] blockIndices,
+            List<TileData> tileDataList
+    ) {
+        public long getTotalBlocks() {
+            return (long) sizeX * sizeY * sizeZ;
+        }
+    }
+
+    /**
+     * Reads and parses a snapshot file asynchronously or synchronously.
+     *
+     * @param snapshotFile The snapshot file to read
+     * @param region       The target arena region to validate against
+     * @return LoadedSnapshot containing in-memory palette and block indices
+     * @throws IOException If file reading or parsing fails
+     */
+    public static LoadedSnapshot loadSnapshot(File snapshotFile, ArenaRegion region) throws IOException {
+        if (!snapshotFile.exists()) {
+            throw new FileNotFoundException("Snapshot file does not exist: " + snapshotFile.getAbsolutePath());
+        }
+
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new FileInputStream(snapshotFile))))) {
+            int magic = in.readInt();
+            if (magic != MAGIC) {
+                throw new IOException("Invalid snapshot file format (magic mismatch).");
+            }
+            int version = in.readInt();
+            if (version != VERSION) {
+                throw new IOException("Unsupported snapshot version: " + version);
+            }
+
+            int sizeX = in.readInt();
+            int sizeY = in.readInt();
+            int sizeZ = in.readInt();
+
+            if (sizeX != region.getWidth() || sizeY != region.getHeight() || sizeZ != region.getLength()) {
+                throw new IllegalStateException("Snapshot bounds (" + sizeX + "x" + sizeY + "x" + sizeZ +
+                        ") do not match arena region bounds (" + region.getWidth() + "x" + region.getHeight() + "x" + region.getLength() + ")");
+            }
+
+            int paletteSize = in.readInt();
+            BlockData[] palette = new BlockData[paletteSize];
+            for (int i = 0; i < paletteSize; i++) {
+                String str = in.readUTF();
+                palette[i] = Bukkit.createBlockData(str);
+            }
+
+            int totalBlocks = sizeX * sizeY * sizeZ;
+            short[] blockIndices = new short[totalBlocks];
+            for (int i = 0; i < totalBlocks; i++) {
+                blockIndices[i] = in.readShort();
+            }
+
+            List<TileData> tileDataList = new ArrayList<>();
+            // Read tile entities if available
+            if (in.available() > 0) {
+                int tileCount = in.readInt();
+                for (int i = 0; i < tileCount; i++) {
+                    tileDataList.add(TileData.read(in));
+                }
+            }
+
+            return new LoadedSnapshot(sizeX, sizeY, sizeZ, palette, blockIndices, tileDataList);
+        }
+    }
+
+    /**
+     * Restores an arena from its saved snapshot synchronously.
      *
      * @param region        The arena region
      * @param snapshotFile  The snapshot file
@@ -173,10 +247,6 @@ public class ArenaSnapshot {
             throw new IllegalStateException("World '" + region.getWorldName() + "' is not loaded or does not exist.");
         }
 
-        if (!snapshotFile.exists()) {
-            throw new FileNotFoundException("Snapshot file does not exist: " + snapshotFile.getAbsolutePath());
-        }
-
         int minX = region.getMinX();
         int minY = region.getMinY();
         int minZ = region.getMinZ();
@@ -186,51 +256,12 @@ public class ArenaSnapshot {
         // Ensure chunks are loaded
         ensureChunksLoaded(world, minX, maxX, minZ, maxZ);
 
-        BlockData[] palette;
-        short[] blockIndices;
-        List<TileData> tileDataList = new ArrayList<>();
-        int sizeX, sizeY, sizeZ;
-
-        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new FileInputStream(snapshotFile))))) {
-            int magic = in.readInt();
-            if (magic != MAGIC) {
-                throw new IOException("Invalid snapshot file format (magic mismatch).");
-            }
-            int version = in.readInt();
-            if (version != VERSION) {
-                throw new IOException("Unsupported snapshot version: " + version);
-            }
-
-            sizeX = in.readInt();
-            sizeY = in.readInt();
-            sizeZ = in.readInt();
-
-            if (sizeX != region.getWidth() || sizeY != region.getHeight() || sizeZ != region.getLength()) {
-                throw new IllegalStateException("Snapshot bounds (" + sizeX + "x" + sizeY + "x" + sizeZ +
-                        ") do not match arena region bounds (" + region.getWidth() + "x" + region.getHeight() + "x" + region.getLength() + ")");
-            }
-
-            int paletteSize = in.readInt();
-            palette = new BlockData[paletteSize];
-            for (int i = 0; i < paletteSize; i++) {
-                String str = in.readUTF();
-                palette[i] = Bukkit.createBlockData(str);
-            }
-
-            int totalBlocks = sizeX * sizeY * sizeZ;
-            blockIndices = new short[totalBlocks];
-            for (int i = 0; i < totalBlocks; i++) {
-                blockIndices[i] = in.readShort();
-            }
-
-            // Read tile entities if available
-            if (in.available() > 0) {
-                int tileCount = in.readInt();
-                for (int i = 0; i < tileCount; i++) {
-                    tileDataList.add(TileData.read(in));
-                }
-            }
-        }
+        LoadedSnapshot loaded = loadSnapshot(snapshotFile, region);
+        BlockData[] palette = loaded.palette();
+        short[] blockIndices = loaded.blockIndices();
+        int sizeX = loaded.sizeX();
+        int sizeY = loaded.sizeY();
+        int sizeZ = loaded.sizeZ();
 
         // Apply block updates (physics = false to avoid lighting/block cascades and drops)
         int modifiedCount = 0;
@@ -249,7 +280,7 @@ public class ArenaSnapshot {
         }
 
         // Apply tile entities
-        for (TileData td : tileDataList) {
+        for (TileData td : loaded.tileDataList()) {
             td.apply(world, minX, minY, minZ);
         }
 
@@ -257,8 +288,8 @@ public class ArenaSnapshot {
         if (clearEntities) {
             BoundingBox box = new BoundingBox(minX, minY, minZ, region.getMaxX() + 1.0, region.getMaxY() + 1.0, region.getMaxZ() + 1.0);
             for (Entity entity : world.getNearbyEntities(box)) {
-                if (entity instanceof Player) {
-                    continue; // Never touch players
+                if (entity instanceof Player || entity.hasMetadata("NPC")) {
+                    continue; // Never touch players or NPCs
                 }
                 entity.remove();
             }
@@ -268,7 +299,7 @@ public class ArenaSnapshot {
         return new RestoreResult(modifiedCount, (long) sizeX * sizeY * sizeZ, elapsed);
     }
 
-    private static void ensureChunksLoaded(World world, int minX, int maxX, int minZ, int maxZ) {
+    public static void ensureChunksLoaded(World world, int minX, int maxX, int minZ, int maxZ) {
         int minChunkX = minX >> 4;
         int maxChunkX = maxX >> 4;
         int minChunkZ = minZ >> 4;
@@ -286,7 +317,7 @@ public class ArenaSnapshot {
     // Tile Entity Data Abstractions
     // ========================================================
 
-    private interface TileData {
+    public interface TileData {
         void write(DataOutputStream out) throws IOException;
 
         void apply(World world, int minX, int minY, int minZ);
