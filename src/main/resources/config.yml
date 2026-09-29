@@ -174,11 +174,6 @@ arena-regen:
   minimum-duration-seconds: 5
   adaptive-pacing: true
 
-  # Player safety evacuation settings
-  player-safety:
-    enabled: true
-    prefer-spawn: true
-
 # ========================================================
 # Cosmetic Entitlements System (Chat Colors & Player Glow)
 # ========================================================

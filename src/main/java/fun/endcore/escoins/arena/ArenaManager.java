@@ -6,7 +6,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -204,58 +203,13 @@ public class ArenaManager {
     }
 
     /**
-     * Finds a safe location for players outside the specified arena region.
-     * Checks server spawn first (if outside arena), followed by safe positions around the cuboid perimeters.
-     * Returns null if no safe location could be found.
-     */
-    public Location findSafeExitLocation(ArenaRegion region) {
-        // 1. Try server spawn if configured and safe
-        Location spawnLoc = plugin.getSpawnManager().getSpawnLocation();
-        if (spawnLoc != null && spawnLoc.getWorld() != null && plugin.getSpawnManager().isLocationSafe(spawnLoc)) {
-            if (!region.contains(spawnLoc)) {
-                return spawnLoc;
-            }
-        }
-
-        World world = region.getWorld();
-        if (world == null) return null;
-
-        // 2. Scan safe ground positions outside the 4 perimeters of the cuboid
-        int midX = (region.getMinX() + region.getMaxX()) / 2;
-        int midZ = (region.getMinZ() + region.getMaxZ()) / 2;
-
-        int[][] perimeterCoords = {
-                {region.getMinX() - 2, midZ},
-                {region.getMaxX() + 2, midZ},
-                {midX, region.getMinZ() - 2},
-                {midX, region.getMaxZ() + 2}
-        };
-
-        for (int[] coords : perimeterCoords) {
-            int cx = coords[0];
-            int cz = coords[1];
-
-            int maxY = Math.min(world.getMaxHeight() - 2, region.getMaxY() + 5);
-            int minY = Math.max(world.getMinHeight() + 1, region.getMinY() - 5);
-
-            for (int y = maxY; y >= minY; y--) {
-                Location candidate = new Location(world, cx + 0.5, y, cz + 0.5);
-                if (plugin.getSpawnManager().isLocationSafe(candidate)) {
-                    return candidate;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Regenerates an arena asynchronously loading snapshot data, safely moving any inside players,
+     * Regenerates an arena asynchronously loading snapshot data,
      * and restoring blocks layer-by-layer and row-by-row with adaptive pacing.
+     * Players remain in place freely without being teleported.
      *
      * @param name     The arena name
      * @param callback Callback executed on completion or failure
-     * @throws ArenaException If preconditions fail (arena doesn't exist, no snapshot, already regenerating, or unsafe)
+     * @throws ArenaException If preconditions fail (arena doesn't exist, no snapshot, or already regenerating)
      */
     public void regenerateArena(String name, BiConsumer<RestoreResult, Throwable> callback) throws ArenaException {
         ArenaRegion region = getArena(name);
@@ -277,36 +231,9 @@ public class ArenaManager {
             throw new ArenaException("World '" + region.getWorldName() + "' is not loaded or does not exist.");
         }
 
-        // PLAYER SAFETY CHECK: Detect players inside arena region before restoring blocks
-        List<Player> playersInside = new ArrayList<>();
-        for (Player p : world.getPlayers()) {
-            if (region.contains(p.getLocation())) {
-                playersInside.add(p);
-            }
-        }
-
-        Location safeExit = null;
-        if (!playersInside.isEmpty()) {
-            safeExit = findSafeExitLocation(region);
-            if (safeExit == null) {
-                // No safe destination available: cancel regeneration rather than trapping players
-                throw new ArenaException("Regeneration cancelled: Players are inside arena '" + name + "' and no safe exit destination could be found.");
-            }
-
-            // Safely move players out of the arena region
-            for (Player p : playersInside) {
-                p.teleport(safeExit);
-                p.playSound(safeExit, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
-                plugin.getMessageManager().sendMessage(p, "arena.player-safety-moved",
-                        "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!",
-                        "{ARENA}", region.getName());
-            }
-        }
-
         activeRegenerations.add(lower);
 
         // Load snapshot asynchronously
-        final Location finalSafeExit = safeExit != null ? safeExit : findSafeExitLocation(region);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             ArenaSnapshot.LoadedSnapshot loaded;
             try {
@@ -319,7 +246,7 @@ public class ArenaManager {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 try {
-                    startPacedRegeneration(region, loaded, finalSafeExit, callback);
+                    startPacedRegeneration(region, loaded, callback);
                 } catch (Throwable t) {
                     activeRegenerations.remove(lower);
                     callback.accept(null, t);
@@ -328,7 +255,7 @@ public class ArenaManager {
         });
     }
 
-    private void startPacedRegeneration(ArenaRegion region, ArenaSnapshot.LoadedSnapshot snapshot, Location safeExit, BiConsumer<RestoreResult, Throwable> callback) {
+    private void startPacedRegeneration(ArenaRegion region, ArenaSnapshot.LoadedSnapshot snapshot, BiConsumer<RestoreResult, Throwable> callback) {
         String lower = region.getName().toLowerCase();
         World world = region.getWorld();
         if (world == null || !plugin.isEnabled()) {
@@ -405,18 +332,6 @@ public class ArenaManager {
                 if (delayTicksRemaining > 0) {
                     delayTicksRemaining--;
                     return;
-                }
-
-                // Continuous player safety check during active regeneration
-                if (safeExit != null) {
-                    for (Player p : world.getPlayers()) {
-                        if (region.contains(p.getLocation())) {
-                            p.teleport(safeExit);
-                            plugin.getMessageManager().sendMessage(p, "arena.player-safety-moved",
-                                    "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!",
-                                    "{ARENA}", region.getName());
-                        }
-                    }
                 }
 
                 int placedThisTick = 0;

@@ -278,5 +278,3 @@ arena:
   list-empty: "{PREFIX}&7No arenas have been created yet."
   list-header: "&8&m----------------&r &b&lArenas &8&m----------------"
   list-entry: "&e{ARENA} &7- &f{WORLD} &8(&7{SIZE_X}x{SIZE_Y}x{SIZE_Z}&8, &7{BLOCKS} blocks&8) {SNAPSHOT_STATUS}"
-  player-safety-moved: "{PREFIX}&cYou were safely moved out of arena &e{ARENA} &cbecause it is being regenerated!"
-  safety-cancel-no-destination: "{PREFIX}&cRegeneration cancelled: Players are inside arena &e{ARENA} &cand no safe exit destination could be found."
