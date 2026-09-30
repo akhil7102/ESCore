@@ -34,9 +34,6 @@ public class PlayerConnectionListener implements Listener {
         if (plugin.getCosmeticManager() != null) {
             plugin.getCosmeticManager().onPlayerQuit(event.getPlayer());
         }
-        if (plugin.getArenaManager() != null) {
-            plugin.getArenaManager().clearSelection(event.getPlayer().getUniqueId());
-        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

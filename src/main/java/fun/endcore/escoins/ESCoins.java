@@ -41,7 +41,6 @@ public class ESCoins extends JavaPlugin {
     private ClearLagManager clearLagManager;
     private SpawnManager spawnManager;
     private fun.endcore.escoins.chat.ChatManager chatManager;
-    private fun.endcore.escoins.arena.ArenaManager arenaManager;
     private fun.endcore.escoins.cosmetics.CosmeticManager cosmeticManager;
     private fun.endcore.escoins.tags.TagManager tagManager;
     private fun.endcore.escoins.update.UpdateChecker updateChecker;
@@ -90,17 +89,13 @@ public class ESCoins extends JavaPlugin {
             // 7. Commands Registration
             registerCommands();
 
-            // 9. Chat Management System
+            // 8. Chat Management System
             this.chatManager = new fun.endcore.escoins.chat.ChatManager(this);
-
-            // 8. Arena Regeneration System
-            this.arenaManager = new fun.endcore.escoins.arena.ArenaManager(this);
 
             // 9. Listeners Registration
             getServer().getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
             getServer().getPluginManager().registerEvents(new fun.endcore.escoins.listener.DeathMessagesListener(this), this);
             getServer().getPluginManager().registerEvents(new fun.endcore.escoins.listener.ChatListener(this), this);
-            getServer().getPluginManager().registerEvents(new fun.endcore.escoins.arena.ArenaWandListener(this), this);
 
             // 10. ClearLag Initialization
             this.clearLagManager = new ClearLagManager(this);
@@ -154,12 +149,6 @@ public class ESCoins extends JavaPlugin {
         if (leaderboard != null) {
             leaderboard.stop();
             leaderboard = null;
-        }
-
-        // Stop Arena Manager
-        if (arenaManager != null) {
-            arenaManager.stop();
-            arenaManager = null;
         }
 
         // Stop Cosmetics
@@ -296,13 +285,7 @@ public class ESCoins extends JavaPlugin {
             setspawn.setExecutor(setSpawnCommand);
         }
 
-        // /arena
-        fun.endcore.escoins.arena.ArenaCommand arenaCommand = new fun.endcore.escoins.arena.ArenaCommand(this);
-        PluginCommand arena = getCommand("arena");
-        if (arena != null) {
-            arena.setExecutor(arenaCommand);
-            arena.setTabCompleter(arenaCommand);
-        }
+
     }
 
     private void registerPlaceholders() {
@@ -340,9 +323,6 @@ public class ESCoins extends JavaPlugin {
         }
         if (chatManager != null) {
             chatManager.loadConfig();
-        }
-        if (arenaManager != null) {
-            arenaManager.reload();
         }
         if (cosmeticManager != null) {
             cosmeticManager.reloadConfig();
@@ -464,9 +444,6 @@ public class ESCoins extends JavaPlugin {
         return chatManager;
     }
 
-    public fun.endcore.escoins.arena.ArenaManager getArenaManager() {
-        return arenaManager;
-    }
 
     public fun.endcore.escoins.cosmetics.CosmeticManager getCosmeticManager() {
         return cosmeticManager;

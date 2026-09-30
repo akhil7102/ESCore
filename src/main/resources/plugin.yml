@@ -30,10 +30,6 @@ commands:
     description: Set the server spawn location
     permission: escoins.setspawn
     usage: /setspawn
-  arena:
-    description: Arena regeneration system
-    permission: escoins.arena.admin
-    usage: /arena regen [wand|create|save|regenerate|list|delete]
   cc:
     description: Toggle or manage your chat color cosmetic
     aliases: [chatcolor]
@@ -83,7 +79,6 @@ permissions:
       escoins.setspawn: true
       escoins.balance.others: true
       escoins.clearlag: true
-      escoins.arena.admin: true
       escore.cosmetics.admin: true
       escore.update.admin: true
       escore.glow.toggle: true
@@ -102,9 +97,6 @@ permissions:
   escore.chatcolor.toggle:
     description: Allows toggling chat color on and off
     default: true
-  escoins.arena.admin:
-    description: Allows administrative access to arena regeneration system
-    default: op
   escoins.give:
     description: Allows giving coins to players
     default: op

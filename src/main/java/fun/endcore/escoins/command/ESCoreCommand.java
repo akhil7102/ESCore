@@ -66,7 +66,7 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         fun.endcore.escoins.clearlag.ClearLagManager clm = plugin.getClearLagManager();
         boolean clmEnabled = clm != null && clm.isEnabled();
         String clmFeature = clmEnabled ? "&fClearLag" : "&7ClearLag (Disabled)";
-        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| " + clmFeature + " &8| &fSpawn &8| &fArena Regen &8| &fCosmetics &8| &fTags");
+        mm.sendMessage(sender, "core.features", "&7Features: &fCoins &8| " + clmFeature + " &8| &fSpawn &8| &fCosmetics &8| &fTags");
         if (sender.hasPermission("escoins.admin") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-reload", "&e/escore reload &7- Reload all configurations");
             mm.sendMessage(sender, "core.cmd-give", "&e/escore give <player> <glow|chatcolor|tag> <value> <perm|temp [duration]>");
@@ -84,9 +84,6 @@ public class ESCoreCommand implements CommandExecutor, TabCompleter {
         mm.sendMessage(sender, "core.cmd-spawn", "&e/spawn &7- Teleport to server spawn");
         if (sender.hasPermission("escoins.setspawn") || sender.isOp()) {
             mm.sendMessage(sender, "core.cmd-setspawn", "&e/setspawn &7- Set server spawn location");
-        }
-        if (sender.hasPermission("escoins.arena.admin") || sender.hasPermission("escoins.admin") || sender.isOp()) {
-            mm.sendMessage(sender, "core.cmd-arena", "&e/arena regen &7- Arena regeneration system");
         }
         mm.sendMessage(sender, "core.footer", "&8&m----------------------------------------");
         return true;

@@ -147,34 +147,6 @@ chat:
       - "&e➡ &6&l&nCLICK&r &6to Message!"
 
 # ========================================================
-# Arena Regeneration System
-# ========================================================
-arena-regen:
-  wand:
-    material: WOODEN_AXE
-    name: "&#00D3FF&lArena Selection Wand"
-    lore:
-      - "&7Left-Click: &bSet Position 1"
-      - "&7Right-Click: &bSet Position 2"
-      - "&8Use &e/arena regen create <name> &8to finish."
-
-  # Remove loose entities (dropped items, projectiles, mobs) inside the cuboid during regeneration
-  clear-entities: true
-
-  # Maximum allowed volume for an arena in blocks (0 for unlimited)
-  max-blocks: 1000000
-
-  # Pacing and gradual restoration settings
-  mode: layer-by-layer
-  blocks-per-tick: 250
-  delay-between-rows-ticks: 1
-  delay-between-layers-ticks: 2
-  target-duration-seconds: 30
-  maximum-duration-seconds: 300
-  minimum-duration-seconds: 5
-  adaptive-pacing: true
-
-# ========================================================
 # Cosmetic Entitlements System (Chat Colors & Player Glow)
 # ========================================================
 cosmetics:
